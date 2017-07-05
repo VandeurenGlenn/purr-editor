@@ -1,0 +1,20 @@
+{
+  "name": "array-repeat",
+  "main": "array-repeat.html",
+  "version": "0.2.8",
+  "dependencies": {
+    "custom-elements": "webcomponents/custom-elements#v1",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#v1"
+  },
+  "homepage": "https://github.com/vandeurenglenn/array-repeat",
+  "_release": "0.2.8",
+  "_resolution": {
+    "type": "version",
+    "tag": "0.2.8",
+    "commit": "f87879900d59143de1bc158b5b97f032e778d1d4"
+  },
+  "_source": "https://github.com/vandeurenglenn/array-repeat.git",
+  "_target": "^0.2.8",
+  "_originalSource": "vandeurenglenn/array-repeat",
+  "_direct": true
+}

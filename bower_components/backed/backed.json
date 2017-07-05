@@ -1,0 +1,35 @@
+{
+  "bundles": [{
+    "src": "src/backed.js",
+    "dest": "dist/backed.js",
+    "moduleName": "Backed",
+    "format": "iife"
+  }, {
+    "src": "src/backed.js",
+    "dest": "dist/backed.js",
+    "moduleName": "Backed",
+    "format": "cjs",
+    "plugins": {
+      "babel": {
+        "presets": [[
+          "es2015", {
+            "modules": false
+          }
+        ]],
+        "plugins": [
+          "external-helpers"
+        ]
+      }
+    }
+  }, {
+    "src": "src/backed.js",
+    "dest": "dist/backed.js",
+    "moduleName": "Backed",
+    "format": "es",
+    "plugins": {
+      "babel": {
+        "presets": ["es2016"]
+      }
+    }
+  }]
+}

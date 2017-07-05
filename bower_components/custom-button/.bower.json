@@ -1,0 +1,35 @@
+{
+  "name": "custom-button",
+  "version": "0.1.2",
+  "authors": [
+    "Glenn Vandeuren <vandeurenglenn@gmail.com>"
+  ],
+  "description": "",
+  "main": "custom-button.html",
+  "keywords": [
+    "custom-element",
+    "button"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/vandeurenglenn/custom-button",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "custom-ripple": "^0.1.0",
+    "backed": "^0.4.1"
+  },
+  "_release": "0.1.2",
+  "_resolution": {
+    "type": "version",
+    "tag": "0.1.2",
+    "commit": "688737849a4ac9057bf483d70c5ace9d904611c1"
+  },
+  "_source": "https://github.com/vandeurenglenn/custom-button.git",
+  "_target": "^0.1.1",
+  "_originalSource": "custom-button"
+}

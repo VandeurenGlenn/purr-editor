@@ -1,0 +1,179 @@
+<!doctype html>
+<html>
+  <head>
+    <title>array-repeat demo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+    <link rel="import" href="../array-repeat.html">
+
+    <style>
+      .row {
+        display: flex;
+        flex-direction: row;
+      }
+      .vertical-section-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      array-repeat {
+        max-height: 400px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="row">
+      <div class="vertical-section-container centered">
+        <h3>Basic array-repeat Demo</h3>
+        <h2>Using an array</h2>
+        <array-repeat>
+          <style>
+            .item {
+              display: flex;
+              flex-direction: column;
+              padding: 8px;
+              box-sizing: border-box;
+              border: 1px solid #eee;
+              min-width: 320px;
+              max-width: 640px;
+              background: #FFF;
+              cursor: pointer;
+            }
+          </style>
+          <template>
+            <div class="item">
+              <span>[[item.name]]</span>
+              <span>[[item.type]]</span>
+            </div>
+          </template>
+        </array-repeat>
+      </div>
+      <div class="vertical-section-container centered">
+        <h2>Using an object with select disabled</h2>
+        <array-repeat disable-select>
+          <style>
+            .item {
+              display: flex;
+              flex-direction: column;
+              padding: 8px;
+              box-sizing: border-box;
+              border: 1px solid #eee;
+              min-width: 320px;
+              max-width: 640px;
+              background: #FFF;
+            }
+            .item.selected {
+              background-color: #EEE;
+            }
+            :host([disable-select]) .item * {
+              pointer-events: none;
+              user-select: none;
+            }
+          </style>
+          <template>
+            <div class="item">
+              <span>[[item.name]]</span>
+              <span>[[item.type]]</span>
+              <span>[[item.object.name]]</span>
+              <span>[[item.object.depth]]</span>
+              <span>[[item.object.object.name]]</span>
+              <span>[[item.object.object.depth]]</span>
+            </div>
+          </template>
+        </array-repeat>
+
+      </div>
+    </div>
+
+    <script>
+      const repeats = document.querySelectorAll('array-repeat');
+      let items = [{
+        name: 'item 1',
+        type: 'test'
+      }, {
+        name: 'item 2',
+        type: 'test'
+      }, {
+        name: 'item 3',
+        type: 'test'
+      }, {
+        name: 'item 4',
+        type: 'test'
+      }, {
+        name: 'item 5',
+        type: 'test'
+      }, {
+        name: 'item 6',
+        type: 'test'
+      }, {
+        name: 'item 7',
+        type: 'test'
+      }, {
+        name: 'item 8',
+        type: 'test'
+      }, {
+        name: 'item 9',
+        type: 'test'
+      }, {
+        name: 'item 10',
+        type: 'test'
+      }, {
+        name: 'item 11',
+        type: 'test'
+      }, {
+        name: 'item 12',
+        type: 'test'
+      }, {
+        name: 'item 13',
+        type: 'test'
+      }, {
+        name: 'item 14',
+        type: 'test',
+        object: {
+          name: 'objectInObject',
+          depth: 1,
+          object: {
+            name: 'objectInObject',
+            depth: 2
+          }
+        }
+      }];
+
+      repeats[0].items = items;
+
+      repeats[1].items = {
+        item: {
+          name: 1,
+          type: 'object',
+          object: {
+            name: 'objectInObject',
+            depth: 1,
+            object: {
+              name: 'objectInObject',
+              depth: 2
+            }
+          }
+        },
+        item2: {
+          name: 2,
+          type: 'object',
+          object: {
+            name: 'objectInObject',
+            depth: 1,
+            object: {
+              name: 'objectInObject',
+              depth: 2
+            }
+          }
+        }
+      };
+
+      repeats[0].addEventListener('on-item-select', function(event) {
+        console.log(event);
+      })
+    </script>
+  </body>
+</html>

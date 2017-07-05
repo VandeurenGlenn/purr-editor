@@ -1,0 +1,14 @@
+{
+  "name": "svg-iconset",
+  "homepage": "https://github.com/vandeurenglenn/svg-iconset",
+  "_release": "dd889649f6",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "dd889649f63e8934dcfe8cba5c9585a6d9c11565"
+  },
+  "_source": "https://github.com/vandeurenglenn/svg-iconset.git",
+  "_target": "*",
+  "_originalSource": "vandeurenglenn/svg-iconset",
+  "_direct": true
+}

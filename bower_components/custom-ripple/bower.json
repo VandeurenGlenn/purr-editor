@@ -1,0 +1,25 @@
+{
+  "name": "custom-ripple",
+  "version": "0.1.0",
+  "authors": [
+    "Glenn Vandeuren <vandeurenglenn@gmail.com>"
+  ],
+  "description": "",
+  "main": "custom-ripple.html",
+  "keywords": [
+    "ripple",
+    "custom-element"
+  ],
+  "license": "MIT",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "backed": "^0.4.1"
+  }
+}

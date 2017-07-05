@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+
+    <title>svg-icon - Demo</title>
+    <meta name="description" content="svg-icon - Demo">
+
+    <!-- Mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Chrome / Android -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="black">
+    <link rel="icon" href="icon.png">
+
+    <!-- Safari / iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png">
+
+    <!-- Web Components -->
+    <script src="../bower_components/custom-elements/custom-elements.min.js"></script>
+    <link rel="import" href="../node_modules/backed/backed.html">
+
+    <link rel="import" href="../node_modules/svg-iconset/svg-iconset.html">
+    <link rel="import" href="../svg-icon.html">
+  </head>
+  <body>
+    <svg-icon icon="menu"></svg-icon>
+      <svg-iconset>
+        <svg><defs>
+          <g id="menu"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></g>
+        </defs></svg>
+      </svg-iconset>
+  	<script src="/reload/reload.js"></script>
+</body>
+</html>

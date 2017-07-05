@@ -1,0 +1,34 @@
+{
+  "name": "custom-ripple",
+  "version": "0.1.0",
+  "authors": [
+    "Glenn Vandeuren <vandeurenglenn@gmail.com>"
+  ],
+  "description": "",
+  "main": "custom-ripple.html",
+  "keywords": [
+    "ripple",
+    "custom-element"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/vandeurenglenn/custom-ripple",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "backed": "^0.4.1"
+  },
+  "_release": "0.1.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "0.1.0",
+    "commit": "c837ca509cac06c55463382f281d7264e30c591e"
+  },
+  "_source": "https://github.com/vandeurenglenn/custom-ripple.git",
+  "_target": "^0.1.0",
+  "_originalSource": "custom-ripple"
+}

@@ -1,0 +1,15 @@
+{
+  "name": "svg-icon",
+  "homepage": "https://github.com/vandeurenglenn/svg-icon",
+  "version": "0.3.0",
+  "_release": "0.3.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "0.3.0",
+    "commit": "7d6412edfd7015b6832072d92cc46c74794bed79"
+  },
+  "_source": "https://github.com/vandeurenglenn/svg-icon.git",
+  "_target": "^0.3.0",
+  "_originalSource": "vandeurenglenn/svg-icon",
+  "_direct": true
+}

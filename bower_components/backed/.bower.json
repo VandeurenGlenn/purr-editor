@@ -1,0 +1,27 @@
+{
+  "name": "backed",
+  "version": "0.5.0",
+  "description": "Small web framework for quick app & component development",
+  "main": "backed.html",
+  "authors": [
+    "Glenn Vandeuren <vandeurenglenn@gmail.com>"
+  ],
+  "license": "CC-BY-NC-ND-4.0",
+  "homepage": "https://github.com/vandeurenglenn/backed",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "_release": "0.5.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "0.5.0",
+    "commit": "cbd54c485a76a439c2b443dad7736c4572055f67"
+  },
+  "_source": "https://github.com/vandeurenglenn/backed.git",
+  "_target": "0.5.0",
+  "_originalSource": "backed"
+}

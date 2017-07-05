@@ -1,0 +1,78 @@
+<link rel="import" href="../custom-ripple/custom-ripple.html">
+
+<script>
+'use strict';
+
+window.CustomButtonMixin = base => class extends base {
+	connected() {
+    this.onMouseDown = this.onMouseDown.bind(this); // Bind method
+    this.onMouseUp = this.onMouseUp.bind(this); // Bind method
+    this.onMouseClick = this.onMouseClick.bind(this); // Bind method
+    this.onMouseOver = this.onMouseOver.bind(this); // Bind method
+    this.onMouseOut = this.onMouseOut.bind(this); // Bind method
+
+		this.addEventListener('mousedown', this.onMouseDown);
+		this.addEventListener('mouseup', this.onMouseUp);
+		this.addEventListener('click', this.onMouseClick);
+    this.addEventListener('mouseover', this.onMouseOver);
+    this.addEventListener('mouseout', this.onMouseOut);
+	}
+
+	get ripple() {
+		return this.shadowRoot.querySelector('custom-ripple');
+	}
+
+	get isLink() {
+		return this.hasAttribute('is-link');
+	}
+
+	/**
+	 * Add's mousedown to classList
+	 */
+	onMouseDown() {
+		this.classList.add('mousedown');
+	}
+
+	/**
+	 * Set's boxShadow=none & removes mousedown from the classList
+	 */
+	onMouseUp() {
+		this.classList.remove('mousedown');
+	}
+
+	/**
+	 * @param {Object} event
+	 */
+	onMouseClick(event) {
+		if (this.stopPropagationDisabled === false) {
+			event.stopPropagation();
+		}
+		document.dispatchEvent(new CustomEvent(this.name)); // Fire event
+		if (this.isLink) {
+			window.location.hash = this.getAttribute('name');
+		}
+
+  	if (!this.ripple) {
+      const ripple = document.createElement('custom-ripple');
+    	this.shadowRoot.appendChild(ripple);
+  	}
+		this.ripple.run();
+	}
+
+  onMouseOver() {
+    this.classList.add('focus');
+  }
+
+  onMouseOut() {
+    this.classList.remove('focus');
+  }
+
+	/**
+	 * @return {Boolean}
+	 */
+	get stopPropagationDisabled() {
+		return this.hasAttribute('disable-stop-propagation');
+	}
+};
+
+</script>

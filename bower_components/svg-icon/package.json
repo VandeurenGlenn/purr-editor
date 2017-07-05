@@ -1,0 +1,59 @@
+{
+  "name": "svg-icon",
+  "description": "Icon element to use with svg-iconset",
+  "main": "svg-icon.html",
+  "module": "dist/svg-icon-es.js",
+  "version": "0.3.0",
+  "authors": [
+    "Glenn Vandeuren <vandeurenglenn@gmail.com>"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "svg",
+    "icon",
+    "svg-icon"
+  ],
+  "files": [
+    "dist",
+    "svg-icon.html"
+  ],
+  "homepage": "https://github.com/vandeurenglenn/svg-icon#readme",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "backed": "^0.3.3",
+    "custom-elements": "webcomponents/custom-elements"
+  },
+  "devDependencies": {
+    "babel-plugin-external-helpers": "^6.22.0",
+    "svg-iconset": "^0.3.1"
+  },
+  "backed": {
+    "bundles": [
+      {
+        "src": "src/svg-icon.js",
+        "dest": "dist/svg-icon.js",
+        "format": "iife",
+        "moduleName": "SvgIcon",
+        "babel": {
+          "presets": [
+            [
+              "es2015",
+              {
+                "modules": false
+              }
+            ]
+          ],
+          "plugins": [
+            "external-helpers"
+          ]
+        }
+      }
+    ]
+  }
+}
