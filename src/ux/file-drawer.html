@@ -1,0 +1,260 @@
+<link rel="import" href="file-drawer-item.html" async>
+
+
+<template id="file-drawer">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: column;
+      width: 256px;
+    }
+    .container {
+      flex: 1;
+      overflow: auto;
+    }
+  </style>
+  <slot name="header"></slot>
+  <div class="container">
+    <context-wrapper>
+      <custom-selector attr-for-selected="data-name" on-custom-selected-change="onCustomSelectedChange">
+        <slot name="item"></slot>
+      </custom-selector>
+    </context-wrapper>
+    <context-menu on-context-menu-close="onContextmenuClosed">
+      <custom-button no-shadow disable-stop-propagation reason="newFile">new file</custom-button>
+      <custom-button no-shadow disable-stop-propagation reason="newFolder">new folder</custom-button>
+      <custom-divider></custom-divider>
+      <custom-button no-shadow disable-stop-propagation reason="addFile" title="upload file">add file</custom-button>
+      <custom-button no-shadow disable-stop-propagation reason="addFolder" title="upload folder">add folder</custom-button>
+      <custom-divider></custom-divider>
+      <custom-button no-shadow disable-stop-propagation reason="rename">rename</custom-button>
+    </context-menu>
+  </div>
+</template>
+
+<script>
+  class FsObject {
+    constructor(key, name) {
+      this.name = name;
+      this.path = `${key}/${name}`;
+    }
+    get folderDepth() {
+      return (this.path.split('/').length - 1);
+    }
+    get base() {
+      return {
+        name: this.name,
+        path: this.path,
+        folderDepth: this.folderDepth
+      }
+    }
+  }
+
+  class PurrFile extends FsObject {
+    constructor(key, name, contents = '') {
+      super(key, name);
+      if (name.match(/(.*).(js)$/igm)) {
+        contents = `'use strict;'`;
+      }
+      const file = this.base;
+      file.type = 'file';
+      file.contents = contents;
+
+      return file;
+    }
+  }
+
+  class PurrFolder extends FsObject {
+    constructor(key, name, children = []) {
+      super(key, name);
+
+      const file = this.base;
+      file.type = 'folder';
+      file.children = children;
+
+      return file;
+    }
+  }
+
+  Backed(class FileDrawer extends HTMLElement {
+    static get properties() {
+      return {
+        project: {
+          observer: 'render'
+        }
+      }
+    }
+
+    get urlBar() {
+      return this.parentNode.querySelector('url-bar');
+    }
+
+    get slotItems() {
+      return this.shadowRoot.querySelector('slot[name="item"]').assignedNodes();
+    }
+
+    ready() {
+      this.onContextmenuClosed = this.onContextmenuClosed.bind(this);
+    }
+
+    onCustomSelectedChange(event) {
+      const detail = event.detail;
+
+      switch (detail.type) {
+        case 'folder':
+          const depth = detail.dataset.depth;
+          const folded = detail.folded;
+          for (const item of this.slotItems) {
+            if (item.dataset.depth > depth) {
+              if (folded) {
+                item.classList.remove('closed');
+              } else {
+                item.classList.add('closed');
+              }
+            } else {
+              // item.classList.add('closed');
+            }
+          }
+          detail.folded = !detail.folded;
+          break;
+        case 'file':
+          this.dispatchEvent(new CustomEvent('show-file', {detail: detail.path}));
+          break;
+      }
+    }
+
+    forceRender() {
+      this.render();
+    }
+
+    /**
+     * renders items
+     */
+    render() {
+      let calls = 0;
+      this.total = 0;
+      // this.innerHTML = '';
+      const nodes = this.slotItems;
+
+      for (const property of this.project) {
+        const key = property[0];
+        const prop = property[1];
+        let parentCalls = 0;
+        let item;
+        if (nodes[calls]) {
+          item = nodes[calls];
+        } else {
+          item = document.createElement('file-drawer-item');
+          this.appendChild(item);
+        }
+        item.name = prop.name;
+        item.type = prop.type;
+        item.path = prop.path;
+        item.dataset.name = prop.name;
+        item.dataset.path = prop.path;
+        item.dataset.depth = prop.folderDepth;
+        // check if folder is closed
+        if (this.isFolded(prop.folderDepth)) {
+          item.classList.add('closed');
+        }
+        item.style.paddingLeft = `${prop.folderDepth * 8}px`;
+        // item.addEventListener('context-menu-closed', this.onContextmenuClosed.bind(this));
+        item.slot = 'item';
+        // this.handleChildren(prop.children, calls, nodes, prop.name)
+        calls++;
+      }
+    }
+
+    isFolded(depth) {
+      if (depth > 0) {
+        const parentDepth = (depth - 1);
+        const parent = this.querySelector(`[data-depth="${parentDepth}"]`);
+        if (parent.folded) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    /**
+     * Check if path already exists, when true it returns 'path'.copy as result
+     */
+    handleDuplicatePath(key, path) {
+      const value = this.project.get(key)
+      if (value && value.children && value.children.length > 0) {
+
+        value.children.map(node => {
+          if (node.path === `${key}/${path}`) {
+            path = `${this.project.get(`${key}/${path}`).name}.copy`;
+            return this.handleDuplicatePath(key, path);
+          }
+        })
+      } else if (this.project.get(path)) {
+        path = `${this.project.get(path).name}.copy`;
+        return this.handleDuplicatePath(path);
+      }
+      return path;
+    }
+
+
+    updateProject(key, data) {
+      // get the children from the project map by key
+      const children = this.project.get(key).children;
+      children.push(data);
+
+      // update project map with the new/updated data
+      this.project.set(data.path, data);
+      this.render({value: this.project});
+      localStorage.setItem('purr-editor::project', JSON.stringify(Array.from(this.project.entries())));
+    }
+
+    /**
+     * Creates a new file, after receiving a name/path from the urlBar
+     */
+    newFile(event) {
+      let target = event.detail.target;
+      if (target) {
+        while (target.type === 'file') {
+          target = target.previousElementSibling;
+        }
+      }
+      this.urlBar.newPath().then(name => {
+        const key = target.path;
+        const file = new PurrFile(key, this.handleDuplicatePath(key, name));
+
+        this.updateProject(key, file);
+        // TODO: findout why contents aren't loaded
+        this.dispatchEvent(new CustomEvent('show-file', {detail: file.path}));
+      });
+    }
+
+    /**
+     * Creates a new folder, after receiving a name/path from the urlBar
+     */
+    newFolder(event) {
+      let target = event.detail.target;
+      if (target) {
+        while (target.type === 'file') {
+          target = target.previousElementSibling;
+        }
+      }
+      this.urlBar.newPath(true).then(name => {
+        const key = target.path;
+        const folder = new PurrFolder(key, this.handleDuplicatePath(key, name));
+
+        this.updateProject(key, folder);
+      });
+    }
+
+    rename() {
+      console.log('rename');
+    }
+
+    onContextmenuClosed(event) {
+      const reason = event.detail.reason;
+      if (reason) {
+        this[reason](event);
+      }
+    }
+  });
+</script>

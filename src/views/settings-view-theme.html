@@ -1,0 +1,78 @@
+<template id="settings-view-theme">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+  <h2>theme</h2>
+  <select on-change="onchange">
+
+  </select>
+</template>
+
+<script>
+  // TODO: @AndrewVanardennen add more themes https://ace.c9.io/build/kitchen-sink.html
+  const themes = [
+    {name: 'chrome', type: 'bright'},
+    {name: 'clouds', type: 'bright'},
+    {name: 'crimson_editor', type: 'bright'},
+    {name: 'dawn', type: 'bright'},
+    {name: 'dreamweaver', type: 'bright'},
+    {name: 'eclipse', type: 'bright'},
+    {name: 'github', type: 'bright'}
+  ]
+  Backed(class SettingsViewTheme extends HTMLElement {
+    static get properties() {
+      return {
+        themes: {
+          value: themes,
+          observer: 'themesChanged'
+        }
+      }
+    }
+    get select() {
+      return this.shadowRoot.querySelector('select');
+    }
+    ready() {
+      this.onchange = this.onchange.bind(this)
+      this.select.addEventListener('change', this.onchange);
+      const config = JSON.parse(localStorage.getItem('purr::config'));
+      if (config) {
+        this.select.value = config.theme;
+      }
+    }
+    onchange(event) {
+      const theme = this.select.value;
+      let data = JSON.parse(localStorage.getItem('purr::config'));
+      if (data) {
+        data.theme = theme;
+      } else {
+        data = {
+          theme: theme
+        }
+      }
+
+      localStorage.setItem('purr::config', JSON.stringify(data));
+    }
+    themesChanged() {
+      for (const item of this.themes) {
+        let optgroup = this.select.querySelector('optgroup[label="'+ item.type +'"]')
+        if (!optgroup) {
+          optgroup = document.createElement('optgroup');
+          optgroup.setAttribute('label', item.type);
+          this.select.appendChild(optgroup)
+        }
+        let option = document.createElement('option');
+        // item = item.replace(/"/g, '');
+        option.value = item.name;
+        option.innerHTML = item.name;
+        optgroup.appendChild(option);
+        // if (response.indexOf(`"${item}"`) === 0)
+      }
+      this.select.dispatchEvent(new CustomEvent('change'));
+    }
+  })
+</script>

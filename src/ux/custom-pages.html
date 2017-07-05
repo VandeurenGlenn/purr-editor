@@ -1,0 +1,64 @@
+<template id="custom-pages">
+  <style>
+    :host {
+      flex: 1;
+      position: relative;
+      --primary-background-color: #ECEFF1;
+    }
+    ::slotted(*) {
+      display: flex;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+    ::slotted([hidden]) {
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
+  <div class="wrapper">
+    <slot></slot>
+  </div>
+</template>
+
+<script>
+  'use strict';
+  /**
+   * @extends HTMLElement
+   */
+  Backed(class CustomPages extends HTMLElement {
+      /**
+   		* @return {String}
+   		*/
+   	 get attrForSelected() {
+   		 return this.getAttribute('attr-for-selected') || 'name';
+   	 }
+
+     set attrForSelected(value) {
+       this.setAttribute('attr-for-selected', value);
+     }
+    /**
+     * @param {String} page
+     */
+    select(page) {
+      if (typeof page === 'object') {
+        if (this.previousSelected) {
+          this.previousSelected.setAttribute('hidden', '');
+        }
+        this.previousSelected = page;
+        page.removeAttribute('hidden');
+ 		  } else {
+        for (let i = 0; i < this.children.length; i++) {
+          let child = this.children[i];
+          if (child.getAttribute(this.attrForSelected) === page) {
+            child.removeAttribute('hidden');
+          } else {
+            child.setAttribute('hidden', '');
+          };
+        }
+      }
+    }
+  });
+</script>

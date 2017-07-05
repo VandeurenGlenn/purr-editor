@@ -1,0 +1,49 @@
+<link rel="import" href="settings-view-theme.html">
+<link rel="import" href="settings-view-keymaps.html">
+
+<template id="settings-view">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: row;
+      height: 100%;
+      width: 100%;
+    }
+    .drawer {
+      display: flex;
+      flex-direction: column;
+      width: 164px;
+      height: 100%;
+      border-right: solid #eee 1px;
+    }
+    h2 {
+      margin: 0;
+      padding: 8px;
+      border-bottom: solid #eee 1px;
+    }
+  </style>
+
+  <div class="drawer">
+    <h2>Settings</h2>
+    <custom-button no-shadow>theme</custom-button>
+    <custom-button no-shadow>keymaps</custom-button>
+  </div>
+
+  <custom-pages attr-for-selected="name">
+    <settings-view-theme name="theme"></settings-view-theme>
+    <settings-view-keymaps name="keymaps"></settings-view-keymaps>
+  </custom-pages>
+
+</template>
+
+<script>
+  Backed(class SettingsView extends HTMLElement {
+    get pages() {
+      return this.shadowRoot.querySelector('custom-pages')
+    }
+
+    created() {
+      this.pages.select('theme');
+    }
+  })
+</script>

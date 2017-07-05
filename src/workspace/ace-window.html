@@ -1,0 +1,119 @@
+<template id="ace-window">
+  <style>
+    ::slotted(.ace) {
+      flex: 1;
+    }
+    :host([hidden]) ::slotted(.ace) {
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
+  <slot></slot>
+</template>
+
+<script>
+  Backed(class AceWindow extends HTMLElement {
+    static get properties() {
+      return {
+
+        loadedMap: {
+          value: new Map()
+        },
+
+        lib: {
+          value: '../bower_components/ace-builds/src/'
+        },
+
+        ace: {
+          observer: 'render'
+        },
+
+        theme: {
+          value: 'github',
+          observer: 'render'
+        },
+
+        mode: {
+          value: 'javascript',
+          observer: 'render'
+        },
+
+        contents: {
+          observer: 'render'
+        }
+      }
+    }
+
+    get editor() {
+      if (!this.__editor)
+        this.__editor = document.createElement('div');
+        this.__editor.classList.add('ace');
+      return this.__editor;
+    }
+
+    created() {
+      this.__contentsChanged__ = this.__contentsChanged__.bind(this)
+      if (!window.ace) {
+        requestAnimationFrame(() => {
+          this.loadScript(this.lib + 'ace.js').then(() => {
+            this.__setupAce();
+          });
+        });
+      } else {
+        this.__setupAce();
+      }
+    }
+
+    ready() {
+      this.appendChild(this.editor);
+    }
+
+    __setupAce() {
+      this.ace = ace.edit(this.editor);
+      this.ace.addEventListener('change', this.__contentsChanged__);
+    }
+
+    render(change) {
+      if (this.ace && this.mode && this.theme && this.contents) {
+        this.setTheme(this.theme);
+        this.setMode(this.mode);
+        this.ace.setValue(this.contents);
+      }
+    }
+
+    __contentsChanged__(change) {
+      if (typeof change === 'object'){
+
+        console.log(change);
+      }
+    }
+
+    needsLoad(key) {
+      return this.loadedMap.has(key)
+    }
+
+    setTheme(theme) {
+      if (this.needsLoad(theme)) {
+        this.loadScript(this.lib + 'theme-' + theme + '.js').then(() => {
+          console.log(theme);
+          this.ace.setTheme('ace/theme/' + theme);
+        });
+      } else {
+        this.ace.setTheme('ace/theme/' + theme);
+      }
+
+    }
+
+    setMode(mode) {
+      if (this.needsLoad(mode)) {
+        // load mode
+        this.loadScript(this.lib + 'mode-' + mode + '.js').then(() => {
+          this.ace.getSession().setMode('ace/mode/' + mode);
+          this.loadedMap.set(mode, true);
+        });
+      } else {
+        this.ace.getSession().setMode('ace/mode/' + mode);
+      }
+    }
+  });
+</script>

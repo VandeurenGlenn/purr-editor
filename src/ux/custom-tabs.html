@@ -1,0 +1,17 @@
+<link rel="import" href="custom-tab.html">
+
+<template id="custom-tabs">
+  <style>
+    :host {
+      display: flex;
+      height: 48px;
+    }
+  </style>
+  <slot name="tab"></slot>
+</template>
+
+<script>
+  Backed(class CustomTabs extends HTMLElement {
+
+  });
+</script>

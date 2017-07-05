@@ -1,0 +1,168 @@
+<template id="url-bar">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: column;
+      /*height: 96px;*/
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 82px;
+      max-height: 96px;
+      min-width: 320px;
+      background-color: var(--primary-background-color, #607D8B);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      padding: 12px;
+      box-sizing: border-box;
+      transition: opacity ease-in 500ms transform ease-in 500ms;
+    	box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+    							0 1px 5px 0 rgba(0, 0, 0, 0.12),
+    							0 3px 1px -2px rgba(0, 0, 0, 0.2);
+
+      --svg-icon-size: 20px;
+    }
+    :host(.shown) {
+      pointer-events: auto;
+      opacity: 1;
+    }
+    @media (min-width: 320px) {
+      :host {
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: 320px;
+      }
+    }
+    @media (min-width: 600px) {
+      :host {
+        max-width: 480px;
+      }
+    }
+    @media (min-width: 960px) {
+      :host {
+        top: 0;
+        bottom: inherit;
+      }
+    }
+    h4 {
+      margin: 0;
+    }
+    input {
+      border: none;
+      user-select: none;
+      outline: none;
+      background: none;
+      height: 36px;
+    }
+    .flex {
+      flex: 1;
+    }
+    .top {
+      display: flex;
+      align-items: center;
+    }
+    svg-icon {
+      padding-right: 8px;
+    }
+  </style>
+  <span class="top">
+    <svg-icon icon="add"></svg-icon>
+    <h4 class="heading"></h4>
+  </span>
+  <span class="flex"></span>
+  <input type="text" name="path" required>
+  <custom-divider></custom-divider>
+</template>
+
+<template id="custom-toast">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: row;
+      opacity: 0;
+    }
+
+    .shown {
+      opacity: 1;
+    }
+  </style>
+</template>
+<script>
+  Backed(class CustomToast extends HTMLElement {
+    show() {
+      this.classList.add('shown')
+    }
+
+    hide() {
+      this.classList.remove('shown')
+    }
+  });
+  Backed(class UrlBar extends HTMLElement {
+    ready() {
+    }
+
+    set title(value) {
+      this.shadowRoot.querySelector('h4.heading').innerHTML = value;
+    }
+
+    get input() {
+      return this.shadowRoot.querySelector('input')
+    }
+
+    get toast() {
+      return this.shadowRoot.querySelector('custom-toast')
+    }
+
+    isValid(string) {
+      if (typeof string !== 'string' || string.length === 0) {
+        return false;
+      }
+      // check if there is an extension
+      return Boolean(string.match(/(\.[a-z].*)/));
+    }
+
+    notifyInvalid(string) {
+      // TODO: show toast!
+      if (typeof string !== 'string') {
+        return false;
+      } else if (string.length === 0) {
+        console.warn('path required');
+      }
+    }
+
+    open() {
+      this.classList.add('shown');
+      this.input.focus();
+    }
+
+    newPath(folder) {
+      return new Promise((resolve, reject) => {
+        const onKeyUp = event => {
+          const key = event.key;
+          if (key === 'Enter') {
+            const value = this.input.value;
+            if (folder) {
+              window.removeEventListener('keyup', onKeyUp);
+              this.classList.remove('shown');
+              return resolve(value);
+            } else {
+              if (this.isValid(value)) {
+                window.removeEventListener('keyup', onKeyUp);
+                this.classList.remove('shown');
+                return resolve(value);
+              } else {
+                this.notifyInvalid(value)
+              }
+            }
+          }
+        }
+        window.addEventListener('keyup', onKeyUp);
+        this.title = 'Enter the path for the new file';
+        this.open();
+      });
+    }
+  })
+
+</script>

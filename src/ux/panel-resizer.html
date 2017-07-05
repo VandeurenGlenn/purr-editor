@@ -1,0 +1,111 @@
+<template id="panel-resizer">
+  <style>
+    :host {
+      display: flex;
+      border-right: solid;
+      border-width: var(--panel-resizer-size, 5px);
+      border-color: var(--panel-resizer-color, #EEE);
+      cursor: col-resize;
+    }
+    :host([left]) {
+      border-left: solid;
+    }
+    :host([top]) {
+      border-top: solid;
+    }
+    :host([bottom]) {
+      border-bottom: solid;
+    }
+  </style>
+</template>
+
+<script>
+  Backed(class PanelResizer extends HTMLElement {
+    /**
+     * returns difference between start and end
+     */
+    get difference() {
+      // left is less, right is greater
+      return (this.end - this.start);
+    }
+    /**
+     * returns true when top or bottom are set
+     */
+    get horizontal() {
+      return this.hasAttribute('top') ? true : this.hasAttribute('bottom');
+    }
+    ready() {
+      // this._onDrag = this._onDrag.bind(this);
+      this._onDragStart = this._onDragStart.bind(this);
+      this._onDragEnd = this._onDragEnd.bind(this);
+      requestAnimationFrame(() => {
+        this._init()
+      });
+    }
+
+    _init() {
+      this.setAttribute('draggable', true);
+      this.addEventListener('drag', this._onDrag);
+      this.addEventListener('dragstart', this._onDragStart);
+      this.addEventListener('dragend', this._onDragEnd);
+    }
+
+    disconnected() {
+      this.removeEventListener('dragstart', this._onDragStart);
+      this.removeEventListener('dragend', this._onDragEnd);
+    }
+
+    /**
+     * checks if difference is lower than 5
+     */
+    validDifference(difference, end) {
+      // true when there isn't one
+      if (!this.lastDifference) {
+        this.lastDifference = difference;
+        this.lastEnd = end;
+        return true;
+      } else if (this.lastDifference === difference || this.lastEnd === end) {
+        return false;
+      } else {
+        if (this.lastDifference > difference &&
+            (this.lastDifference - difference) < 5 ||
+            this.lastDifference < difference &&
+            (difference - this.lastDifference) < 5) {
+          this.lastDifference = difference;
+          this.lastEnd = end;
+          return true;
+        }
+      }
+      return false;
+    }
+
+    _onDragStart(event) {
+      this.start = this.horizontal ? event.clientY : event.clientX;
+    }
+
+    _onDrag(event) {
+      this.end = this.horizontal ? event.clientY : event.clientX;
+      let result;
+      if (this.lastEnd && this.lastEnd > this.end) {
+        result = this.lastEnd - this.end;
+      } else if (this.lastEnd && this.lastEnd < this.end) {
+        result = this.end - this.lastEnd;
+      }
+      if (this.validDifference(this.difference, this.end)) {
+        this.dispatchEvent(new CustomEvent('panel-resizer-resize', {
+          detail: result
+        }));
+      }
+    }
+
+    _onDragEnd(event) {
+      this.end = this.horizontal ? event.clientY : event.clientX;
+      const difference = this.difference;
+      if (this.validDifference(difference, this.end)) {
+        this.dispatchEvent(new CustomEvent('panel-resizer-resize', {
+          detail: difference
+        }));
+      }
+    }
+  });
+</script>

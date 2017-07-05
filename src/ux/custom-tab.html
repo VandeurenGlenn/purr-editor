@@ -1,0 +1,69 @@
+<template id="custom-tab">
+  <style>
+    :host {
+      display: inline-flex;
+      width: 148px;
+      height: 48px;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 8px 12px;
+      box-sizing: border-box;
+      cursor: pointer;
+
+      --svg-icon-size: 16px;
+      --svg-icon-color: #EEE;
+    }
+    .flex {
+      flex: 1;
+    }
+
+    svg-icon {
+      opacity: 0;
+    }
+
+    :host(.over) svg-icon {
+      opacity: 1;
+    }
+  </style>
+  <slot></slot>
+  <span class="flex"></span>
+  <svg-icon icon="close" on-click="_close"></svg-icon>
+</template>
+
+<script>
+  Backed(class CustomTab extends HTMLElement {
+
+    set name(value) {
+      this.innerHTML = value;
+    }
+
+    created() {
+      this._onMouseIn = this._onMouseIn.bind(this);
+      this._onMouseOut = this._onMouseOut.bind(this);
+    }
+
+    ready() {
+      this.addEventListener('mouseover', this._onMouseIn)
+      this.addEventListener('mouseout', this._onMouseOut)
+    }
+
+    disconnected() {
+      this.removeEventListener('mouseover', this._onMouseIn)
+      this.removeEventListener('mouseout', this._onMouseOut)
+    }
+
+    _onMouseIn() {
+      this.classList.add('over');
+    }
+
+    _onMouseOut() {
+      this.classList.remove('over');
+    }
+
+    _close() {
+      this.dispatchEvent(new CustomEvent('custom-tab-close', {
+        detail: this.dataset.path
+      }));
+    }
+  });
+</script>

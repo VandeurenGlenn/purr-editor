@@ -1,0 +1,174 @@
+<link rel="import" href="../../bower_components/custom-button/custom-button-mixin.html">
+
+<template id="file-drawer-item">
+  <style>
+    :host {
+      display: inline-flex;
+      flex-direction: column;
+      position: relative;
+      min-height:  48px;
+      width: 100%;
+      outline: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      cursor: pointer;
+      z-index: 0;
+      line-height: 1;
+      -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+      -webkit-tap-highlight-color: transparent;
+      color: var(--custom-button-color, #111);
+
+      --custom-ripple-radius: 0px;
+      --svg-icon-size: 18px;
+
+      opacity: 1;
+      transform: scaleY(1);
+    }
+    :host(.closed) {
+      opacity: 0;
+      transform: scaleY(0);
+    }
+    :host([no-shadow]) {
+      box-shadow: none;
+    }
+    :host(.focus) {
+      background-color: var(--custom-button-focus-color, #EEE);
+    }
+    svg-icon {
+      padding-right: 8px;
+    }
+    .row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      width: 100%;
+      pointer-events: none;
+      max-height: 48px;
+      padding: 8px;
+      box-sizing: border-box !important;
+    }
+  </style>
+
+  <div class="row">
+    <svg-icon class="fold-icon" icon=""></svg-icon>
+    <svg-icon class="type-icon" icon=""></svg-icon>
+    <h4></h4>
+  </div>
+
+  <div style="pointer-events: none;">
+    <context-wrapper>
+      <slot></slot>
+    </context-wrapper>
+  </div>
+
+  <context-menu on-context-menu-close="onContextmenuClosed">
+    <custom-button no-shadow disable-stop-propagation reason="newFile">new file</custom-button>
+    <custom-button no-shadow disable-stop-propagation reason="newFolder">new folder</custom-button>
+    <custom-divider></custom-divider>
+    <custom-button no-shadow disable-stop-propagation reason="addFile" title="upload file">add file</custom-button>
+    <custom-button no-shadow disable-stop-propagation reason="addFolder" title="upload folder">add folder</custom-button>
+    <custom-divider></custom-divider>
+    <custom-button no-shadow disable-stop-propagation reason="rename">rename</custom-button>
+  </context-menu>
+  <!-- <svg-icon icon="unfold-less"></svg-icon> -->
+</template>
+
+<template id="context-wrapper">
+  <slot></slot>
+</template>
+<script>
+  Backed(class ContextWrapper extends HTMLElement {
+
+    ready() {
+      this.shadowRoot.addEventListener('contextmenu', event => {
+        event.preventDefault();
+        this.parentNode.querySelector('context-menu').open(event.clientX, event.clientY);
+      })
+    }
+  })
+  Backed(class FileDrawerItem extends HTMLElement {
+
+    static get observedAttributes() {
+      return ['name', 'type', 'folded']
+    }
+
+    static get properties() {
+      return {
+
+        name: {
+          observer: 'nameChanged'
+        },
+
+        type: {
+          observer: 'typeChanged'
+        },
+
+        folded: {
+          value: false,
+          observer: 'render'
+        }
+      }
+    }
+
+    nameChanged(change) {
+      if (change.value) {
+        this.shadowRoot.querySelector('h4').innerHTML = change.value;
+      }
+    }
+
+    typeChanged(change) {
+      this.type = change.value
+      // if (change.value) {
+        switch (change.value) {
+          case 'folder':
+            this.typeIcon = 'folder';
+            break;
+          case 'file':
+            this.typeIcon = 'file';
+            break;
+        }
+        this.render();
+      // }
+    }
+
+    render() {
+      if (this.type === 'folder') {
+        if (this.folded) {
+          this.icon = 'unfold-more';
+        } else {
+          this.icon = 'unfold-less';
+        }
+      } else if (this.type === 'file') {
+        this.icon = 'subdirectory-arrow-right';
+      }
+    }
+
+    onMouseClick() {
+      this.folded = !this.folded;
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+      this[name] = newValue;
+    }
+
+    onContextmenuClosed(event) {
+      // event.stopPropagation()
+      event.preventDefault()
+      this.dispatchEvent(new CustomEvent('context-menu-closed', {detail: event.detail}))
+    }
+
+    get foldIconElement() {
+      return this.shadowRoot.querySelector('.fold-icon');
+    }
+
+    set typeIcon(value) {
+      this.shadowRoot.querySelector('.type-icon').setAttribute('icon', value);
+    }
+
+    set icon(value) {
+      this.foldIconElement.setAttribute('icon', value);
+    }
+  });
+</script>

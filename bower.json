@@ -1,0 +1,27 @@
+{
+  "name": "purr-editor",
+  "description": "",
+  "main": "index.js",
+  "authors": [
+    "Glenn Vandeuren <vandeurenglenn@gmail.com>"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/VandeurenGlenn/purr-editor",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "backed": "0.5.0",
+    "ace-builds": "^1.2.7",
+    "custom-button": "^0.1.1",
+    "svg-iconset": "vandeurenglenn/svg-iconset",
+    "array-repeat": "vandeurenglenn/array-repeat#^0.2.8"
+  },
+  "resolutions": {
+    "backed": "0.5.0"
+  }
+}

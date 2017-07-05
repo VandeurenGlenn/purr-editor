@@ -1,0 +1,309 @@
+<link rel="import" href="../bower_components/backed/backed.html">
+<link rel="import" href="../bower_components/custom-button/custom-button.html">
+<link rel="import" href="ui/custom-divider.html" async>
+<link rel="import" href="ux/file-drawer.html" async>
+<link rel="import" href="ux/url-bar.html" async>
+<link rel="import" href="ux/context-menu.html" async>
+<link rel="import" href="ux/custom-pages.html" async>
+<link rel="import" href="ux/custom-tabs.html" async>
+<link rel="import" href="../bower_components/svg-iconset/svg-iconset.html" async>
+<link rel="import" href="../bower_components/svg-icon/svg-icon.html" async>
+<link rel="import" href="workspace/ace-window.html" async>
+<link rel="import" href="views/settings-view.html" async>
+<link rel="import" href="ux/panel-resizer.html">
+
+
+
+<template id="purr-editor">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+    }
+    .wrapper {
+      display: flex;
+      flex: 1;
+      /*height: calc(100% - 36px);*/
+    }
+
+    header {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      width: 100%;
+      height: 48px;
+      background: #455A64;
+      padding: 12px;
+      color: #FFF;
+      box-sizing: border-box;
+    }
+
+    main {
+      display: flex;
+      flex: 1;
+      flex-direction: row;
+    }
+
+    h1 {
+      margin: 0;
+    }
+
+    context-menu custom-button {
+      min-width: 148px;
+      text-decoration: none;
+      text-transform: capitalize;
+      --custom-button-radius: 0px;
+    }
+    .flex {
+      flex: 1;
+    }
+    .bottom-bar {
+      height: 36px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      padding: 8px 12px;
+      box-sizing: border-box;
+      background: #455A64;
+      --svg-icon-size: 20px;
+      --svg-icon-color: #EEE;
+    }
+    .bottom-bar svg-icon {
+      cursor: pointer;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+  </style>
+  <div class="wrapper">
+    <file-drawer on-show-file="onShowFile">
+      <header slot="header">
+        <h1>Purr</h1>
+      </header>
+    </file-drawer>
+
+    <div class="container">
+      <header>
+        <custom-tabs></custom-tabs>
+      </header>
+      <main>
+        <!-- <panel-resizer on-panel-resizer-resize="onPanelResize"></panel-resizer> -->
+        <url-bar></url-bar>
+        <slot></slot>
+      </main>
+    </div>
+  </div>
+  <div class="bottom-bar">
+    <svg-icon icon="settings" on-click="onSettingsClick"></svg-icon>
+  </div>
+
+  <svg-iconset name="icons">
+    <svg><defs>
+      <g id="add"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></g>
+      <g id="close"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></g>
+      <g id="file"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></g>
+      <g id="folder"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></g>
+      <g id="unfold-less"><path d="M7.41 18.59L8.83 20 12 16.83 15.17 20l1.41-1.41L12 14l-4.59 4.59zm9.18-13.18L15.17 4 12 7.17 8.83 4 7.41 5.41 12 10l4.59-4.59z"/></g>
+      <g id="unfold-more"><path d="M12 5.83L15.17 9l1.41-1.41L12 3 7.41 7.59 8.83 9 12 5.83zm0 12.34L8.83 15l-1.41 1.41L12 21l4.59-4.59L15.17 15 12 18.17z"/></g>
+      <g id="settings"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></g>
+      <g id="subdirectory-arrow-right"><path d="M19 15l-6 6-1.42-1.42L15.17 16H4V4h2v10h9.17l-3.59-3.58L13 9l6 6z"/></g>
+    </defs></svg>
+  </svg-iconset>
+</template>
+
+<script>
+  (() => {
+    Backed(class PurrEditor extends HTMLElement {
+      static get properties() {
+        return {
+
+          loadedMap: {
+            value: new Map()
+          },
+
+          windowMap: {
+            value: new Map(JSON.parse(localStorage.getItem('purr-editor::windows'))) || new Map()
+          },
+
+          selectedWindow: {
+            observer: 'selectedWindowChanged'
+          },
+
+          project: {
+            observer: 'projectChange'
+          },
+
+          data: {
+            value: new Map(JSON.parse(localStorage.getItem('purr-editor::project'))) || new Map()
+          }
+        }
+      }
+
+      get fileDrawer() {
+        return this.shadowRoot.querySelector('file-drawer');
+      }
+
+      get pages() {
+        return this.querySelector('custom-pages');
+      }
+
+      get tabs() {
+        return this.shadowRoot.querySelector('custom-tabs');
+      }
+
+      created() {
+        this._onTabClosed = this._onTabClosed.bind(this);
+        const pages = document.createElement('custom-pages');
+        pages.attrForSelected = 'data-path';
+        const settings = document.createElement('settings-view');
+        settings.dataset.path = 'settings';
+        pages.appendChild(settings);
+        this.appendChild(pages);
+        this.pages.select('home');
+      }
+
+      ready() {
+        this.project = this.project || new Map();
+        if (this.data.size > 0) {
+          this.project = this.data;
+          for (const key of this.windowMap.keys()) {
+            this.renderWindow(key);
+          }
+          this.selectedWindow = localStorage.getItem('purr-editor::last-selected');
+        } else {
+          const data = {
+            name: 'project',
+            path: 'project',
+            type: 'folder',
+            folderDepth: 0,
+            children: []
+          }
+          this.project.set('project', data);
+          localStorage.setItem('purr-editor::project', JSON.stringify(Array.from(this.project.entries())));
+        }
+        this.projectChange({value: this.project});
+      }
+
+      projectChange(change) {
+        if (change.value && change.value.size > 0) {
+          let calls = 0;
+          const nodes = this.tabs.shadowRoot.querySelector('slot[name="tab"]').assignedNodes();
+          for (const property of this.windowMap) {
+            let item;
+            if (nodes[calls]) {
+              item = nodes[calls];
+            } else {
+              item = document.createElement('custom-tab');
+            }
+            const prop = this.project.get(property[0]);
+            if (prop.folderDepth > 0) {
+              item.name = prop.name;
+              item.slot = 'tab';
+              item.dataset.name = prop.name;
+              item.dataset.path = prop.path;
+              item.addEventListener('custom-tab-close', this._onTabClosed);
+              this.tabs.appendChild(item);
+              calls++;
+            }
+          }
+          this.fileDrawer.project = change.value;
+          this.fileDrawer.forceRender();
+        }
+      }
+
+      disconnected() {
+        // cleanup event listeners etc ...
+      }
+
+      _onTabClosed() {
+        let calls = 0;
+        const key = event.detail;
+        let previousEntry = '';
+        for (const entry of this.windowMap.entries()) {
+          previousEntry = entry[0];
+          if (entry[0] === key) {
+            this.windowMap.delete(key);
+            this.tabs.removeChild(this.tabs.querySelector(`custom-tab[data-path="${key}"]`));
+            if (!previousEntry) {
+              previousEntry = this.windowMap.keys()[0][0]
+              return;
+            }
+          }
+          calls++;
+        }
+
+        localStorage.setItem('purr-editor::windows', JSON.stringify(Array.from(this.windowMap.entries())));
+        this.selectedWindow = previousEntry;
+      }
+
+      renderWindow(key) {
+        const contents = this.windowMap.get(key);
+        const aceWindow = document.createElement('ace-window');
+        const config = JSON.parse(localStorage.getItem('purr::config'));
+        aceWindow.contents = contents;
+        aceWindow.path = key;
+        // check path for extension and set desired mode
+        aceWindow.mode = 'javascript';
+        aceWindow.theme = config ? config.theme : 'github';
+        aceWindow.dataset.path = key;
+
+        this.pages.appendChild(aceWindow);
+      }
+
+      selectedWindowChanged(change) {
+        this.pages.select(change.value);
+        localStorage.setItem('purr-editor::last-selected', change.value);
+      }
+
+      renderTab(key) {
+        const prop = this.project.get(key);
+        const item = document.createElement('custom-tab')
+        item.name = prop.name;
+        item.slot = 'tab';
+        item.dataset.name = prop.name;
+        item.dataset.path = prop.path;
+        item.addEventListener('custom-tab-close', this._onTabClosed);
+        this.tabs.appendChild(item);
+      }
+
+      onShowFile(event) {
+        const key = event.detail;
+        // TODO: handle existing files
+        if (!this.windowMap.has(key)) {
+          this.windowMap.set(key, this.project.get(key).contents);
+          localStorage.setItem('purr-editor::windows', JSON.stringify(Array.from(this.windowMap.entries())));
+          this.renderTab(key);
+          this.renderWindow(key);
+        }
+        this.selectedWindow = key;
+      }
+
+      onSettingsClick() {
+        this.pages.select('settings');
+        localStorage.setItem('purr-editor::last-selected', 'settings');
+      }
+
+      resize(selector, value) {
+        const target = this.shadowRoot.querySelector(selector);
+        const ratio = target.getBoundingClientRect().width + value;
+        // target.style.transform = `translateX(${ratio}px)`;
+        requestAnimationFrame(() => {
+          target.style.width = ratio + 'px';
+        })
+      }
+
+      onPanelResize(event) {
+        const value = event.detail;
+        if (String(value).includes('-')) {
+          this.resize('file-drawer', value);
+        } else {
+          this.resize('file-drawer', value);
+        }
+      }
+    });
+  })();
+</script>

@@ -1,0 +1,95 @@
+<link rel="import" href="custom-selector.html">
+
+<template id="context-menu">
+  <style>
+    :host {
+      opacity: 0;
+      display: flex;
+      flex-direction: column;
+      position: absolute;
+      background: #fff;
+      z-index: 100;
+      pointer-events: none;
+			box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+									0 1px 5px 0 rgba(0, 0, 0, 0.12),
+									0 3px 1px -2px rgba(0, 0, 0, 0.2);
+    }
+    :host(.shown) {
+      pointer-events: auto;
+      opacity: 1;
+    }
+  </style>
+  <slot></slot>
+</template>
+
+<script>
+  Backed(class ContextMenu extends HTMLElement {
+
+    static get observedAttributes() {
+      return ['target'];
+    }
+
+    set target(value) {
+      this._target = value;
+    }
+
+    get target() {
+      return this._target || [];
+    }
+
+    get preventDefault() {
+      return !this.hasAttribute('disable-prevent-default');
+    }
+
+    ready() {
+      this.close = this.close.bind(this);
+      this.onContextmenu = this.onContextmenu.bind(this);
+      window.addEventListener('contextmenu', this.onContextmenu);
+    }
+
+    onContextmenu(event) {
+      var x = event.clientX;
+      var y = event.clientY;
+      this.currentTarget = event.path[0];
+      if (this.target.length > 0) {
+        for (const target of this.target) {
+          if (event.path && event.path[0].localName === target) {
+            event.preventDefault();
+            return this.open(x, y);
+          }
+        }
+        if (this.preventDefault) {
+          event.preventDefault();
+        }
+        if (this.classList.contains('shown')) {
+          return this.close();
+        }
+      } else if(this.target.length < 0) {
+        event.preventDefault();
+        this.open(x, y);
+      }
+    }
+
+    open(x, y) {
+      window.addEventListener('click', this.close);
+      this.style.left = x + 'px';
+      this.style.top = y + 'px';
+      this.classList.add('shown');
+    }
+
+    close(event) {
+      console.log(event);
+      window.removeEventListener('click', this.close);
+      this.dispatchEvent(new CustomEvent('context-menu-close', {detail: {
+        target: this.currentTarget,
+        reason: event.path ? event.path[0].getAttribute('reason') : null
+      }}))
+      this.classList.remove('shown');
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+      console.log(newValue.split(','));
+      this[name] = newValue.split(',');
+    }
+  })
+</script>
