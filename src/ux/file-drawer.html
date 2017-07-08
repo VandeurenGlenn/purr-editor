@@ -99,6 +99,10 @@
       }
     }
 
+    get windowMap() {
+      return new Map(JSON.parse(localStorage.getItem('purr-editor::windows'))) || new Map()
+    }
+
     get urlBar() {
       return this.parentNode.querySelector('url-bar');
     }
@@ -214,7 +218,7 @@
       return path;
     }
 
-
+    // TODO: give files an uid
     updateProject(key, data) {
       // get the children from the project map by key
       const children = this.project.get(key).children;
@@ -224,6 +228,25 @@
       this.project.set(data.path, data);
       this.render({value: this.project});
       localStorage.setItem('purr-editor::project', JSON.stringify(Array.from(this.project.entries())));
+    }
+
+    updateName(original, name) {
+      const data = this.project.get(original);
+      data.name = name.match(/([a-zA-Z0-9-_.]+\..*)/g)[0]
+      data.path = name;
+      if (data.folderDepth === 0) {
+        this.projectName = name;
+      } else {
+        this.project.delete(original);
+        if (this.windowMap.has(original)) {
+          const windowMap = this.windowMap;
+          windowMap.delete(original);
+          windowMap.set(name, true);
+          localStorage.setItem('purr-editor::windows', JSON.stringify(Array.from(windowMap.entries())));
+        }
+        const parent = data.path.replace(/\/+([a-zA-Z0-9-_.]+\..*)/g, '');
+        this.updateProject(parent, data);
+      }
     }
 
     /**
@@ -264,8 +287,13 @@
       });
     }
 
-    rename() {
-      console.log('rename');
+    rename(event) {
+      let target = event.detail.target;
+      const path = target.path;
+      this.urlBar.rename(path).then(name => {
+        this.updateName(target.path, name);
+        // this.updateProject(key, folder);
+      });
     }
 
     onContextmenuClosed(event) {
