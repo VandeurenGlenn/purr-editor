@@ -1,3 +1,4 @@
+<link rel="import" href="../ux/custom-pages.html">
 <link rel="import" href="settings-view-theme.html">
 <link rel="import" href="settings-view-keymaps.html">
 
@@ -42,7 +43,7 @@
       return this.shadowRoot.querySelector('custom-pages')
     }
 
-    created() {
+    ready() {
       this.pages.select('theme');
     }
   })
