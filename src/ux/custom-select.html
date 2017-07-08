@@ -1,0 +1,61 @@
+<template id="custom-select">
+  <style>
+    select {
+      border: none;
+      cursor: pointer;
+      user-select: none;
+      background: none;
+      outline: none;
+      color: var(--custom-select-color, #888);
+      background: var(--custom-select-background, #FFF);
+    }
+  </style>
+  <select on-change="onchange">
+
+  </select>
+</template>
+
+<script>
+  Backed(class CustomSelect extends HTMLElement {
+    static get properties() {
+      return {
+        items: {
+          value: [],
+          observer: 'itemsChanged'
+        }
+      }
+    }
+    get select() {
+      return this.shadowRoot.querySelector('select');
+    }
+    set selected(value) {
+      this.select.value = value;
+    }
+    ready() {
+      this.onchange = this.onchange.bind(this)
+      this.select.addEventListener('change', this.onchange);
+    }
+    onchange() {
+      this.dispatchEvent(new CustomEvent('custom-select', {detail: this.select.value}));
+    }
+    itemsChanged(change) {
+      for (const item of this.items) {
+        let optgroup = this.select.querySelector('optgroup[label="'+ item.type +'"]')
+        if (!optgroup && item.type) {
+          optgroup = document.createElement('optgroup');
+          optgroup.setAttribute('label', item.type);
+          this.select.appendChild(optgroup)
+        }
+        let option = document.createElement('option');
+        // item = item.replace(/"/g, '');
+        option.value = item.name;
+        option.innerHTML = item.name;
+        if (item.type) {
+          optgroup.appendChild(option);
+        } else {
+          this.select.appendChild(option);
+        }
+      }
+    }
+  })
+</script>

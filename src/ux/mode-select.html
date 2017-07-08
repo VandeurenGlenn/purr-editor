@@ -1,0 +1,43 @@
+<link rel="import" href="custom-select.html">
+<template id="mode-select">
+  <style media="screen">
+    custom-select {
+      --custom-select-color: var(--primary-text-color, #EEE);
+      --custom-select-background: var(--primary-color, #EEE);
+    }
+  </style>
+  <custom-select on-custom-select="_onCustomSelect"></custom-select>
+</template>
+
+<script>
+  Backed(class ModeSelect extends HTMLElement {
+    static get properties() {
+      return {
+        items: {
+          value: [],
+          observer: 'itemsChanged'
+        }
+      }
+    }
+    get select() {
+      return this.shadowRoot.querySelector('custom-select');
+    }
+    set selected(value) {
+      // TODO: check when custom-select is ready
+      requestAnimationFrame(() => {
+        this.select.selected = value;
+      });
+    }
+    ready() {
+      this.select.items = [{name: 'JavaScript'}, {name: 'HTML'}, {name: 'CSS'}];
+    }
+
+    itemsChanged(change) {
+      const value = change.value;
+      this.select.items = value;
+    }
+    _onCustomSelect(event) {
+      this.dispatchEvent(new CustomEvent('mode-select', {detail: event.detail}));
+    }
+  })
+</script>
