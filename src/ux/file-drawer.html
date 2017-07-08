@@ -53,14 +53,28 @@
   class PurrFile extends FsObject {
     constructor(key, name, contents = '') {
       super(key, name);
-      if (name.match(/(.*).(js)$/igm)) {
-        contents = `'use strict;'`;
+      if (name.match(/(.*).(js)$/igm)) { // && es env ...
+        contents = `'use strict';`;
       }
       const file = this.base;
       file.type = 'file';
       file.contents = contents;
+      file.mode = this.modeFromExtension(this.path);
 
       return file;
+    }
+
+    modeFromExtension(path) {
+      const extension = path.match(/([\w]{2,4})(\?|$)/m)[0];
+      switch (extension) {
+        case 'js':
+          return 'JavaScript';
+          break;
+        case 'html':
+          return 'HTML';
+          break;
+
+      }
     }
   }
 
@@ -139,29 +153,33 @@
       for (const property of this.project) {
         const key = property[0];
         const prop = property[1];
-        let parentCalls = 0;
-        let item;
-        if (nodes[calls]) {
-          item = nodes[calls];
-        } else {
-          item = document.createElement('file-drawer-item');
-          this.appendChild(item);
+
+        // render objects only, ignore the rest
+        if (typeof prop === 'object') {
+          let parentCalls = 0;
+          let item;
+          if (nodes[calls]) {
+            item = nodes[calls];
+          } else {
+            item = document.createElement('file-drawer-item');
+            this.appendChild(item);
+          }
+          item.name = prop.name;
+          item.type = prop.type;
+          item.path = prop.path;
+          item.dataset.name = prop.name;
+          item.dataset.path = prop.path;
+          item.dataset.depth = prop.folderDepth;
+          // check if folder is closed
+          if (this.isFolded(prop.folderDepth)) {
+            item.classList.add('closed');
+          }
+          item.style.paddingLeft = `${prop.folderDepth * 8}px`;
+          // item.addEventListener('context-menu-closed', this.onContextmenuClosed.bind(this));
+          item.slot = 'item';
+          // this.handleChildren(prop.children, calls, nodes, prop.name)
+          calls++;
         }
-        item.name = prop.name;
-        item.type = prop.type;
-        item.path = prop.path;
-        item.dataset.name = prop.name;
-        item.dataset.path = prop.path;
-        item.dataset.depth = prop.folderDepth;
-        // check if folder is closed
-        if (this.isFolded(prop.folderDepth)) {
-          item.classList.add('closed');
-        }
-        item.style.paddingLeft = `${prop.folderDepth * 8}px`;
-        // item.addEventListener('context-menu-closed', this.onContextmenuClosed.bind(this));
-        item.slot = 'item';
-        // this.handleChildren(prop.children, calls, nodes, prop.name)
-        calls++;
       }
     }
 

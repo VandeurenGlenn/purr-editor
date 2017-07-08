@@ -78,7 +78,6 @@
     }
 
     close(event) {
-      console.log(event);
       window.removeEventListener('click', this.close);
       this.dispatchEvent(new CustomEvent('context-menu-close', {detail: {
         target: this.currentTarget,

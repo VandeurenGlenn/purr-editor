@@ -6,13 +6,12 @@
 <link rel="import" href="ux/context-menu.html" async>
 <link rel="import" href="ux/custom-pages.html" async>
 <link rel="import" href="ux/custom-tabs.html" async>
+<link rel="import" href="ux/mode-select.html" async>
 <link rel="import" href="../bower_components/svg-iconset/svg-iconset.html" async>
 <link rel="import" href="../bower_components/svg-icon/svg-icon.html" async>
 <link rel="import" href="workspace/ace-window.html" async>
 <link rel="import" href="views/settings-view.html" async>
-<link rel="import" href="ux/panel-resizer.html">
-
-
+<!-- <link rel="import" href="ux/panel-resizer.html"> -->
 
 <template id="purr-editor">
   <style>
@@ -21,6 +20,9 @@
       flex-direction: column;
       width: 100%;
       height: 100%;
+
+      --primary-color: #455A64;
+      --primary-text-color: #EEE;
     }
     .wrapper {
       display: flex;
@@ -78,6 +80,9 @@
       flex-direction: column;
       flex: 1;
     }
+    svg-icon[icon="file-download"] {
+      padding-left: 8px;
+    }
   </style>
   <div class="wrapper">
     <file-drawer on-show-file="onShowFile">
@@ -99,6 +104,9 @@
   </div>
   <div class="bottom-bar">
     <svg-icon icon="settings" on-click="onSettingsClick"></svg-icon>
+    <span class="flex"></span>
+    <mode-select on-mode-select="onModeSelect"></mode-select>
+    <svg-icon icon="file-download" on-click="onDownload"></svg-icon>
   </div>
 
   <svg-iconset name="icons">
@@ -106,6 +114,7 @@
       <g id="add"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></g>
       <g id="close"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></g>
       <g id="file"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></g>
+      <g id="file-download"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></g>
       <g id="folder"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></g>
       <g id="unfold-less"><path d="M7.41 18.59L8.83 20 12 16.83 15.17 20l1.41-1.41L12 14l-4.59 4.59zm9.18-13.18L15.17 4 12 7.17 8.83 4 7.41 5.41 12 10l4.59-4.59z"/></g>
       <g id="unfold-more"><path d="M12 5.83L15.17 9l1.41-1.41L12 3 7.41 7.59 8.83 9 12 5.83zm0 12.34L8.83 15l-1.41 1.41L12 21l4.59-4.59L15.17 15 12 18.17z"/></g>
@@ -137,6 +146,10 @@
             observer: 'projectChange'
           },
 
+          projectName: {
+            value: 'project'
+          },
+
           data: {
             value: new Map(JSON.parse(localStorage.getItem('purr-editor::project'))) || new Map()
           }
@@ -155,8 +168,13 @@
         return this.shadowRoot.querySelector('custom-tabs');
       }
 
+      get modeSelect() {
+        return this.shadowRoot.querySelector('mode-select');
+      }
+
       created() {
         this._onTabClosed = this._onTabClosed.bind(this);
+        this._onTabClick = this._onTabClick.bind(this);
         const pages = document.createElement('custom-pages');
         pages.attrForSelected = 'data-path';
         const settings = document.createElement('settings-view');
@@ -174,16 +192,17 @@
             this.renderWindow(key);
           }
           this.selectedWindow = localStorage.getItem('purr-editor::last-selected');
+          this.projectName = this.project.get('name');
         } else {
           const data = {
-            name: 'project',
-            path: 'project',
+            name: this.projectName,
+            path: this.projectName,
             type: 'folder',
             folderDepth: 0,
             children: []
           }
-          this.project.set('project', data);
-          localStorage.setItem('purr-editor::project', JSON.stringify(Array.from(this.project.entries())));
+          this.project.set(this.projectName, data);
+          this.project.set('name', this.projectName);
         }
         this.projectChange({value: this.project});
       }
@@ -206,10 +225,12 @@
               item.dataset.name = prop.name;
               item.dataset.path = prop.path;
               item.addEventListener('custom-tab-close', this._onTabClosed);
+              item.addEventListener('click', this._onTabClick);
               this.tabs.appendChild(item);
               calls++;
             }
           }
+          localStorage.setItem('purr-editor::project', JSON.stringify(Array.from(this.project.entries())));
           this.fileDrawer.project = change.value;
           this.fileDrawer.forceRender();
         }
@@ -219,7 +240,13 @@
         // cleanup event listeners etc ...
       }
 
-      _onTabClosed() {
+      _onTabClick(event) {
+        if (event.path[0].localName !== 'svg-icon') {
+          this.onShowFile({detail: event.path[0].dataset.path});
+        }
+      }
+
+      _onTabClosed(event) {
         let calls = 0;
         const key = event.detail;
         let previousEntry = '';
@@ -228,6 +255,7 @@
           if (entry[0] === key) {
             this.windowMap.delete(key);
             this.tabs.removeChild(this.tabs.querySelector(`custom-tab[data-path="${key}"]`));
+            this.pages.removeChild(this.querySelector(`ace-window[data-path="${key}"]`));
             if (!previousEntry) {
               previousEntry = this.windowMap.keys()[0][0]
               return;
@@ -241,21 +269,26 @@
       }
 
       renderWindow(key) {
-        const contents = this.windowMap.get(key);
+        const item = this.project.get(key);
+        const contents = item.contents;
         const aceWindow = document.createElement('ace-window');
         const config = JSON.parse(localStorage.getItem('purr::config'));
         aceWindow.contents = contents;
         aceWindow.path = key;
         // check path for extension and set desired mode
-        aceWindow.mode = 'javascript';
+        aceWindow.mode = String(item.mode).toLowerCase();
         aceWindow.theme = config ? config.theme : 'github';
         aceWindow.dataset.path = key;
-
         this.pages.appendChild(aceWindow);
       }
 
       selectedWindowChanged(change) {
-        this.pages.select(change.value);
+        if (change.value) {
+          this.pages.select(change.value);
+        }
+        if (this.project.has(change.value)) {
+          this.modeSelect.selected = this.project.get(change.value).mode;
+        }
         localStorage.setItem('purr-editor::last-selected', change.value);
       }
 
@@ -274,7 +307,7 @@
         const key = event.detail;
         // TODO: handle existing files
         if (!this.windowMap.has(key)) {
-          this.windowMap.set(key, this.project.get(key).contents);
+          this.windowMap.set(key, true);
           localStorage.setItem('purr-editor::windows', JSON.stringify(Array.from(this.windowMap.entries())));
           this.renderTab(key);
           this.renderWindow(key);
@@ -302,6 +335,47 @@
           this.resize('file-drawer', value);
         } else {
           this.resize('file-drawer', value);
+        }
+      }
+
+      onModeSelect(event) {
+        if (this.selectedWindow) {
+          const file = this.project.get(this.selectedWindow);
+          file.mode = event.detail;
+          this.project.set(this.selectedWindow, file);
+          this.projectChange({value: this.project});
+        }
+      }
+
+      _createZip(project) {
+        const zip = new JSZip();
+        for (let item of project) {
+          item = item[1];
+          if (item.type === 'folder' && item.folderDepth > 0) {
+            const folder = zip.folder(item.name);
+            for (const child of item.children) {
+              folder.file(child.name, child.contents);
+            }
+          } else if(item.type === 'file' && item.folderDepth === 1) {
+            zip.file(item.name, item.contens);
+          }
+        }
+        zip.generateAsync({type:"blob"})
+        .then((content) => {
+            // see FileSaver.js
+            saveAs(content, `${this.projectName}.zip`);
+        });
+      }
+
+      onDownload(event) {
+        if (!window.JSZip) {
+          this.loadScript('/bower_components/jszip/dist/jszip.min.js').then(() => {
+            this.loadScript('/bower_components/file-saver/FileSaver.min.js').then(() => {
+              this._createZip(this.project);
+            });
+          });
+        } else {
+          this._createZip(this.project);
         }
       }
     });
