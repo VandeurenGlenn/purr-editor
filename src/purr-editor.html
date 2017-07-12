@@ -207,6 +207,12 @@
       }
 
       ready() {
+        window.addEventListener('keydown', event => {
+          const { ctrlKey, key } = event;
+          if (ctrlKey && key === 's') {
+            event.preventDefault();
+          }
+        })
         const promises = [];
         const pages = document.createElement('custom-pages');
         pages.attrForSelected = 'data-uid';
