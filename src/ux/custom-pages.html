@@ -4,18 +4,34 @@
       flex: 1;
       position: relative;
       --primary-background-color: #ECEFF1;
+      overflow: hidden;
     }
     ::slotted(*) {
       display: flex;
       position: absolute;
+      opacity: 0;
+      pointer-events: none;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
+      transition: transform ease-out 160ms, opacity ease-out 320ms;
+      /*transform: scale(0.5);*/
+      transform-origin: left;
     }
-    ::slotted([hidden]) {
-      opacity: 0;
-      pointer-events: none;
+    ::slotted(.animate-up) {
+      transform: translateY(-120%);
+    }
+    ::slotted(.animate-down) {
+      transform: translateY(120%);
+    }
+    ::slotted(.custom-selected) {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+      transition: transform ease-in 160ms, opacity ease-in 320ms;
+      max-height: 100%;
+      max-width: 100%;
     }
   </style>
   <div class="wrapper">
@@ -39,23 +55,55 @@
      set attrForSelected(value) {
        this.setAttribute('attr-for-selected', value);
      }
+
+     isEvenNumber(number) {
+       return Boolean(number % 2 === 0)
+     }
+
+     ready() {
+       this.slotchange = this.slotchange.bind(this);
+       this.slotted = this.shadowRoot.querySelector('slot');
+       this.slotted.addEventListener('slotchange', this.slotchange);
+      //  if (this.slotted.length > 0) {
+      //    this.slotchange()
+      //  }
+     }
+
+     slotchange() {
+       let call = 0;
+       for (const child of this.slotted.assignedNodes()) {
+         child.style.zIndex = 99 - call;
+         if (this.isEvenNumber(call++)) {
+           child.classList.add('animate-down');
+         } else {
+           child.classList.add('animate-up');
+         }
+       }
+     }
+
     /**
      * @param {String} page
      */
     select(page) {
       if (typeof page === 'object') {
         if (this.previousSelected) {
-          this.previousSelected.setAttribute('hidden', '');
+          this.previousSelected.classList.remove('custom-selected');
         }
         this.previousSelected = page;
-        page.removeAttribute('hidden');
+        page.classList.add('custom-selected');
  		  } else {
         for (let i = 0; i < this.children.length; i++) {
+          console.log();
           let child = this.children[i];
+          // if (this.isEvenNumber(i)) {
+          //   child.classList.add('animate-down');
+          // } else {
+          //   child.classList.add('animate-up');
+          // }
           if (child.getAttribute(this.attrForSelected) === page) {
-            child.removeAttribute('hidden');
+            child.classList.add('custom-selected');
           } else {
-            child.setAttribute('hidden', '');
+            child.classList.remove('custom-selected');
           };
         }
       }

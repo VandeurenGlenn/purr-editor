@@ -1,0 +1,66 @@
+<template id="custom-number-input">
+  <style>
+    :host {
+      display: block;
+      margin-right: -14px;
+    }
+    :host, input {
+      width: var(--custom-number-input-width, 48px);
+    }
+    input {
+      border: none;
+      user-select: none;
+      outline: none;
+      padding-bottom: 2px;
+    }
+    custom-divider {
+      width: calc(100% - 18px);
+    }
+  </style>
+  <input type="number" value="1000" min="10">
+  <custom-divider top></custom-divider>
+</template>
+
+<script>
+  Backed(class CustomNumberInput extends HTMLElement {
+    static get properties() {
+      return {
+        value: {
+          value: null,
+          observer: 'render'
+        },
+        min: {
+          value: 10,
+          observer: '__render__'
+        }
+      }
+    }
+
+    get input() {
+      return this.shadowRoot.querySelector('input');
+    }
+
+    ready() {
+      this.input.addEventListener('input', () => {
+        const value = this.input.value;
+        if (value.length > 4) {
+          const width = value.length * 9.6;
+          this.style.setProperty('--custom-number-input-width', width + 'px');
+        }
+      })
+      this.input.addEventListener('change', () => {
+        this.dispatchEvent(new CustomEvent('change', {detail: {
+          value: this.input.value,
+          name: this.getAttribute('name')
+        }}));
+      });
+    }
+
+    __render__() {
+      if (this.value && this.min) {
+        this.input.value = this.value;
+        this.input.min = this.min;
+      }
+    }
+  })
+</script>

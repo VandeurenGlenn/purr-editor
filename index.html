@@ -2,8 +2,10 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <meta name=viewport content="width=device-width, initial-scale=1">
     <title>Purr Editor</title>
-    <link rel="import" href="../src/purr-editor.html">
+    <link rel="import" href="src/service-worker-registration.html">
+    <link rel="import" href="src/purr-editor.html">
     <style>
       html, body {
         margin: 0;
@@ -15,5 +17,6 @@
   </head>
   <body>
     <purr-editor></purr-editor>
+    <noscript>Purr is only supported on chrome for now, more browser support coming soon.</noscript>
   </body>
 </html>

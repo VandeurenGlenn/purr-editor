@@ -1,0 +1,103 @@
+<template id="custom-toggle-button">
+  <style>
+    :host {
+      display: flex;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    /* The switch - the box around the slider */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 26px;
+      height: 14px;
+    }
+
+    /* Hide default HTML checkbox */
+    .switch input {display:none;}
+
+    /* The slider */
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      -webkit-transition: .4s;
+      transition: .4s;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: -10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background-color: white;
+      -webkit-transition: .4s;
+      transition: .4s;
+      box-shadow: 0 1px 5px 0 rgba(0, 0, 0, 0.6);
+    }
+
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+
+    input:focus + .slider {
+      box-shadow: 0 0 1px #2196F3;
+    }
+
+    input:checked + .slider:before {
+      -webkit-transform: translateX(26px) translateY(-50%);
+      -ms-transform: translateX(26px) translateY(-50%);
+      transform: translateX(26px) translateY(-50%);
+    }
+
+    /* Rounded sliders */
+    .slider.round {
+      border-radius: 8px;
+    }
+
+    .slider.round:before {
+      border-radius: 50%;
+    }
+  </style>
+
+  <label value="name" class="switch">
+    <input type="checkbox">
+    <div class="slider round"></div>
+  </label>
+</template>
+
+<script>
+  Backed(class CustomToggleButton extends HTMLElement {
+    get input() {
+      return this.shadowRoot.querySelector('input');
+    }
+
+    set checked(value) {
+      this._checked = value;
+      this.input.checked = value;
+    }
+
+    get checked() {
+      return this._checked || false;
+    }
+
+    ready() {
+      this._onChange = this._onChange.bind(this);
+      this.input.addEventListener('change', this._onChange);
+    }
+
+    _onChange(event) {
+      this.dispatchEvent(new CustomEvent(event.type, {detail: {
+        name: this.getAttribute('name'),
+        value: this.input.checked
+      }}))
+    }
+  });
+</script>

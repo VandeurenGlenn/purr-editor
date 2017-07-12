@@ -37,6 +37,10 @@
       this.innerHTML = value;
     }
 
+    set slot(value) {
+      this.setAttribute('slot', value);
+    }
+
     created() {
       this._onMouseIn = this._onMouseIn.bind(this);
       this._onMouseOut = this._onMouseOut.bind(this);
@@ -62,7 +66,7 @@
 
     _close() {
       this.dispatchEvent(new CustomEvent('custom-tab-close', {
-        detail: this.dataset.path
+        detail: this
       }));
     }
   });

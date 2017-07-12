@@ -1,9 +1,12 @@
 {
   "name": "purr-editor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "",
   "main": "index.js",
   "scripts": {
+    "copy": "sh _build/copy.sh",
+    "precache": "sw-precache --config=sw-precache-config.js --root=build/bundled",
+    "release": "npm run copy && npm run precache && firebase deploy",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -17,8 +20,18 @@
   },
   "homepage": "https://github.com/VandeurenGlenn/purr-editor#readme",
   "backed": {
+    "entry": "index.html",
+    "shell": "src/purr-editor.html",
+    "dest": "build/index.html",
+    "presets": ["default"],
+    "fragments": [
+      "src/views/settings-view.html",
+      "src/views/error-view.html"
+    ],
+    "sources": ["index.html", "./src/**"],
+    "root": "src",
     "server": {
-      "demo": "demo"
+      "demo": "build/bundled"
     }
   }
 }

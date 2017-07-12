@@ -1,4 +1,6 @@
-<link rel="import" href="file-drawer-item.html" async>
+<link rel="import" href="custom-selector.html">
+
+<link rel="import" href="file-drawer-item.html">
 
 
 <template id="file-drawer">
@@ -16,7 +18,7 @@
   <slot name="header"></slot>
   <div class="container">
     <context-wrapper>
-      <custom-selector attr-for-selected="data-name" on-custom-selected-change="onCustomSelectedChange">
+      <custom-selector attr-for-selected="data-uid" on-custom-selected-change="onCustomSelectedChange">
         <slot name="item"></slot>
       </custom-selector>
     </context-wrapper>
@@ -36,25 +38,51 @@
   class FsObject {
     constructor(key, name) {
       this.name = name;
-      this.path = `${key}/${name}`;
+      if (key === name) {
+        this.path = name;
+      } else {
+        this.path = `${key}/${name}`;
+      }
     }
     get folderDepth() {
       return (this.path.split('/').length - 1);
     }
     get base() {
       return {
+        uid: this.createGuid(),
         name: this.name,
         path: this.path,
         folderDepth: this.folderDepth
       }
     }
+
+    createGuid() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const random = Math.random()*16|0;
+        const v = c === 'x' ? random : (random&0x3|0x8);
+        return v.toString(16);
+      });
+    }
+
+    getSupportedExtension(path) {
+      const match = path.match(/(.*).(js|html)$/igm);
+      return match ? match[0].replace(/(.*).(?=js|html)/igm, '') : false;
+    }
   }
 
   class PurrFile extends FsObject {
     constructor(key, name, contents = '') {
+      // TODO: add more extensions
       super(key, name);
-      if (name.match(/(.*).(js)$/igm)) { // && es env ...
-        contents = `'use strict';`;
+      const extension = this.getSupportedExtension(name);
+
+      switch (extension) {
+        case 'js':
+          contents = `'use strict';`;
+          break;
+        case 'html':
+          contents = '<!DOCTYPE html>';
+          break;
       }
       const file = this.base;
       file.type = 'file';
@@ -117,6 +145,7 @@
 
     onCustomSelectedChange(event) {
       const detail = event.detail;
+      console.log(event);
 
       switch (detail.type) {
         case 'folder':
@@ -136,25 +165,27 @@
           detail.folded = !detail.folded;
           break;
         case 'file':
-          this.dispatchEvent(new CustomEvent('show-file', {detail: detail.path}));
+          this.dispatchEvent(new CustomEvent('show-file', {detail: detail.dataset.uid}));
           break;
       }
     }
 
-    forceRender() {
-      this.render();
+    forceRender(change) {
+      this.render(change);
     }
 
     /**
      * renders items
      */
-    render() {
+    render(change) {
+      const project = change.value;
+      this.project = change.value;
       let calls = 0;
       this.total = 0;
       // this.innerHTML = '';
       const nodes = this.slotItems;
 
-      for (const property of this.project) {
+      for (const property of project) {
         const key = property[0];
         const prop = property[1];
 
@@ -171,6 +202,7 @@
           item.name = prop.name;
           item.type = prop.type;
           item.path = prop.path;
+          item.dataset.uid = prop.uid;
           item.dataset.name = prop.name;
           item.dataset.path = prop.path;
           item.dataset.depth = prop.folderDepth;
@@ -219,34 +251,34 @@
     }
 
     // TODO: give files an uid
-    updateProject(key, data) {
-      // get the children from the project map by key
-      const children = this.project.get(key).children;
+    updateProject(parentUID, data) {
+      const project = this.project.get(parentUID)
+      // get the children from the project map by parentUID
+      const children = this.project.get(parentUID).children;
       children.push(data);
 
       // update project map with the new/updated data
-      this.project.set(data.path, data);
+      this.project.set(data.uid, data);
       this.render({value: this.project});
       localStorage.setItem('purr-editor::project', JSON.stringify(Array.from(this.project.entries())));
     }
 
-    updateName(original, name) {
-      const data = this.project.get(original);
+    updateName(parentUID, uid, name) {
+      const data = this.project.get(uid);
       data.name = name.match(/([a-zA-Z0-9-_.]+\..*)/g)[0]
       data.path = name;
-      if (data.folderDepth === 0) {
-        this.projectName = name;
-      } else {
-        this.project.delete(original);
-        if (this.windowMap.has(original)) {
-          const windowMap = this.windowMap;
-          windowMap.delete(original);
-          windowMap.set(name, true);
-          localStorage.setItem('purr-editor::windows', JSON.stringify(Array.from(windowMap.entries())));
-        }
-        const parent = data.path.replace(/\/+([a-zA-Z0-9-_.]+\..*)/g, '');
-        this.updateProject(parent, data);
-      }
+      // if (data.folderDepth === 0) {
+      //   this.projectName = name;
+      // } else {
+        // this.project.delete(original);
+        // if (this.windowMap.has(original)) {
+        //   const windowMap = this.windowMap;
+        //   windowMap.delete(original);
+        //   windowMap.set(uid, true);
+        //   localStorage.setItem('purr-editor::windows', JSON.stringify(Array.from(windowMap.entries())));
+        // }
+        this.updateProject(parentUID, data);
+      // }
     }
 
     /**
@@ -260,12 +292,12 @@
         }
       }
       this.urlBar.newPath().then(name => {
-        const key = target.path;
-        const file = new PurrFile(key, this.handleDuplicatePath(key, name));
+        const key = target.dataset.uid;
+        const folder = target.dataset.path;
+        const file = new PurrFile(folder, this.handleDuplicatePath(folder, name));
 
         this.updateProject(key, file);
-        // TODO: findout why contents aren't loaded
-        this.dispatchEvent(new CustomEvent('show-file', {detail: file.path}));
+        this.dispatchEvent(new CustomEvent('show-file', {detail: file.uid}));
       });
     }
 
@@ -280,18 +312,28 @@
         }
       }
       this.urlBar.newPath(true).then(name => {
-        const key = target.path;
-        const folder = new PurrFolder(key, this.handleDuplicatePath(key, name));
+        const key = target.dataset.uid;
+        const path = target.dataset.path;
+        const folder = new PurrFolder(path, this.handleDuplicatePath(path, name));
 
         this.updateProject(key, folder);
       });
     }
 
     rename(event) {
-      let target = event.detail.target;
+      const target = event.detail.target;
+      let parent = target.previousElementSibling;
+      let parentUID = '';
+      if (parent) {
+        while (parent.type === 'file') {
+          parent = parent.previousElementSibling;
+        }
+        parentUID = parent.dataset.uid;
+      }
+      const key = target.dataset.uid;
       const path = target.path;
       this.urlBar.rename(path).then(name => {
-        this.updateName(target.path, name);
+        this.updateName(parentUID, key, name);
         // this.updateProject(key, folder);
       });
     }

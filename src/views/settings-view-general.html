@@ -1,0 +1,128 @@
+<link rel="import" href="../mixins/local-storage-map-mixin.html">
+<link rel="import" href="../ux/custom-toggle-button.html">
+<link rel="import" href="../ux/custom-number-input.html">
+<link rel="import" href="../ui/custom-divider.html">
+
+<template id="settings-view-general">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+    }
+    .group {
+      max-width: 320px;
+      padding: 6px 12px 12px 12px;
+    }
+    .line {
+      width: 100%;
+      min-width: 320px;
+      padding: 6px 12px;
+      display: flex;
+      flex-direction: row;
+      box-sizing: border-box;
+      align-items: center;
+      height: 48px;
+    }
+    h4, h2, h3 {
+      margin: 0;
+    }
+    .flex {
+      flex: 1;
+    }
+
+    h2 {
+      padding: 8px;
+    }
+  </style>
+  <h2>general</h2>
+  <custom-divider></custom-divider>
+  <div class="group">
+    <span class="line">
+      <h3>Auto save</h3>
+      <span class="flex"></span>
+      <custom-toggle-button type="boolean" name="autoSave" on-change="_onSettingChange"></custom-toggle-button>
+    </span>
+    <span class="line">
+      <p>Auto save timeout</p>
+      <span class="flex"></span>
+      <custom-number-input name="autoSaveTimeout" on-change="_onSettingChange"></custom-number-input>
+    </span>
+  </div>
+
+  <custom-divider></custom-divider>
+
+  <div class="group">
+    <span class="line">
+      <h3>Auto completion</h3>
+      <span class="flex"></span>
+      <custom-toggle-button type="boolean" name="autoCompletion" on-change="_onSettingChange"></custom-toggle-button>
+    </span>
+
+    <span class="line">
+      <p>Basic Autocompletion</p>
+      <span class="flex"></span>
+      <custom-toggle-button type="boolean" name="basicAutoCompletion" on-change="_onSettingChange"></custom-toggle-button>
+    </span>
+
+    <span class="line">
+      <p>Live Autocompletion</p>
+      <span class="flex"></span>
+      <custom-toggle-button type="boolean" name="liveAutoCompletion" on-change="_onSettingChange"></custom-toggle-button>
+    </span>
+
+    <span class="line">
+      <p>Snippets</p>
+      <span class="flex"></span>
+      <custom-toggle-button type="boolean" name="snippets" on-change="_onSettingChange"></custom-toggle-button>
+    </span>
+  </div>
+
+</template>
+
+<script>
+  Backed(class SettingsViewGeneral extends LocalStorageMapMixin(HTMLElement) {
+
+    static get properties() {
+      return {
+        config: {
+          value: null,
+          observer: '__configObserver__'
+        }
+      }
+    }
+
+    ready() {
+      this.localNS = 'purr-editor-settings::general';
+      this.config = this.localGet();
+      if (this.config.size === 0) {
+        this.config.set('autoSave', true);
+        this.config.set('autoSaveTimeout', 500);
+        this.config.set('autoCompletion', true);
+        this.config.set('liveAutoCompletion', true);
+        this.config.set('basicAutoCompletion', true);
+        this.localSet(this.config);
+      }
+    }
+
+    __configObserver__(change) {
+      console.log(change);
+      if (change.value) {
+        for (const item of change.value.entries()) {
+          if (typeof item[1] === 'boolean') {
+            const query = `custom-toggle-button[name="${item[0]}"]`;
+            this.shadowRoot.querySelector(query).checked = item[1];
+          }
+        }
+      }
+    }
+
+    _onSettingChange(event) {
+      console.log(event);
+      const { name, value } = event.detail;
+      this.localSet(this.config.set(name, value));
+      this.__configObserver__({change: this.config})
+    }
+  })
+</script>

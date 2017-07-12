@@ -1,3 +1,5 @@
+<link rel="import" href="../mixins/local-storage-map-mixin.html">
+
 <template id="ace-window">
   <style>
     ::slotted(.ace) {
@@ -12,7 +14,8 @@
 </template>
 
 <script>
-  Backed(class AceWindow extends HTMLElement {
+  Backed(class AceWindow extends window.LocalStorageMapMixin(HTMLElement) {
+    // TODO: init ace outside AceWindow
     static get properties() {
       return {
 
@@ -21,7 +24,7 @@
         },
 
         lib: {
-          value: '../bower_components/ace-builds/src/'
+          value: 'bower_components/ace-builds/src-min-noconflict/'
         },
 
         ace: {
@@ -34,12 +37,24 @@
         },
 
         mode: {
-          value: 'javascript',
           observer: 'render'
         },
 
         contents: {
           observer: 'render'
+        },
+
+        autoSave: {
+          value: true
+        },
+
+        autoSaveTimeout: {
+          value: 1000
+        },
+
+        config: {
+          value: null,
+          observer: '__configObserver__'
         }
       }
     }
@@ -53,19 +68,43 @@
 
     created() {
       this.__contentsChanged__ = this.__contentsChanged__.bind(this)
-      if (!window.ace) {
-        requestAnimationFrame(() => {
-          this.loadScript(this.lib + 'ace.js').then(() => {
-            this.__setupAce();
-          });
-        });
-      } else {
-        this.__setupAce();
-      }
+      this.onKeyDown = this.onKeyDown.bind(this)
+      this.localNS = 'purr-editor-settings::general';
+      this.config = this.localGet();
     }
 
     ready() {
+      this.ace = ace.edit(this.editor);
+      this.ace.setOptions({
+          enableBasicAutocompletion: this.basicAutocompletion,
+          enableSnippets: this.snippets,
+          enableLiveAutocompletion: this.liveAutocompletion
+      });
+      this.ace.addEventListener('change', this.__contentsChanged__);
       this.appendChild(this.editor);
+      this.addEventListener('keydown', this.onKeyDown);
+    }
+
+    disconnected() {
+      this.removeEventListener('keydown', this.onKeyDown);
+    }
+
+    onKeyDown(event) {
+      const { key, ctrlKey} = event;
+      if (ctrlKey && key === 's') {
+        event.preventDefault();
+        if (!this.autoSave) {
+          this.save();
+        }
+      }
+    }
+
+    __configObserver__(change) {
+      if (change.value) {
+        for (const entry of change.value.entries()) {
+          this[entry[0]] = entry[1];
+        }
+      }
     }
 
     __setupAce() {
@@ -75,17 +114,39 @@
 
     render(change) {
       if (this.ace && this.mode && this.theme && this.contents) {
+        const contents = this.contents;
         this.setTheme(this.theme);
         this.setMode(this.mode);
-        this.ace.setValue(this.contents);
+        this.ace.setValue(contents === '__purr__editor' ? '' : contents);
       }
     }
 
     __contentsChanged__(change) {
-      if (typeof change === 'object'){
+      if (typeof change === 'object') {
+        if (this.autoSave) {
+          // TODO: track changes for undoing
+          // timeout so we don't stress the browser so much
+          if (this.saveTimeoutRunning) {
+            clearTimeout(this.saveTimeout);
+            this.saveTimeoutRunning = false;
+          }
+          this.saveTimeoutRunning = true;
+          this.saveTimeout = setTimeout(() => {
+            this.save();
+          }, this.autoSaveTimeout);
+        } else {
 
-        console.log(change);
+          // this.save();
+        }
       }
+    }
+
+    save() {
+      const project = new Map(JSON.parse(localStorage.getItem('purr-editor::project')));
+      const file = project.get(this.dataset.uid);
+      file.contents = this.ace.getValue()
+      project.set(this.dataset.uid, file);
+      localStorage.setItem('purr-editor::project', JSON.stringify(Array.from(project)))
     }
 
     needsLoad(key) {
@@ -95,7 +156,6 @@
     setTheme(theme) {
       if (this.needsLoad(theme)) {
         this.loadScript(this.lib + 'theme-' + theme + '.js').then(() => {
-          console.log(theme);
           this.ace.setTheme('ace/theme/' + theme);
         });
       } else {

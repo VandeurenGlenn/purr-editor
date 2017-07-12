@@ -1,17 +1,16 @@
 <link rel="import" href="../bower_components/backed/backed.html">
 <link rel="import" href="../bower_components/custom-button/custom-button.html">
-<link rel="import" href="ui/custom-divider.html" async>
-<link rel="import" href="ux/file-drawer.html" async>
-<link rel="import" href="ux/url-bar.html" async>
-<link rel="import" href="ux/context-menu.html" async>
-<link rel="import" href="ux/custom-pages.html" async>
-<link rel="import" href="ux/custom-tabs.html" async>
-<link rel="import" href="ux/mode-select.html" async>
-<link rel="import" href="../bower_components/svg-iconset/svg-iconset.html" async>
-<link rel="import" href="../bower_components/svg-icon/svg-icon.html" async>
-<link rel="import" href="workspace/ace-window.html" async>
-<link rel="import" href="views/settings-view.html" async>
-<!-- <link rel="import" href="ux/panel-resizer.html"> -->
+<link rel="import" href="ux/custom-tabs.html" >
+<link rel="import" href="ux/custom-pages.html" >
+<link rel="import" href="ui/custom-divider.html" >
+<link rel="import" href="ux/file-drawer.html" >
+<link rel="import" href="ux/url-bar.html" >
+<link rel="import" href="ux/context-menu.html" >
+<link rel="import" href="ux/custom-selector.html" >
+<link rel="import" href="ux/mode-select.html" >
+<link rel="import" href="../bower_components/svg-iconset/svg-iconset.html" >
+<link rel="import" href="../bower_components/svg-icon/svg-icon.html" >
+<link rel="import" href="workspace/ace-window.html" >
 
 <template id="purr-editor">
   <style>
@@ -40,6 +39,7 @@
       padding: 12px;
       color: #FFF;
       box-sizing: border-box;
+      z-index: 100;
     }
 
     main {
@@ -150,10 +150,18 @@
             value: 'project'
           },
 
-          data: {
-            value: new Map(JSON.parse(localStorage.getItem('purr-editor::project'))) || new Map()
+          aceLocation: {
+            value: 'bower_components/ace-builds/src-min-noconflict/'
+          },
+
+          queriedWindows: {
+            value: []
           }
         }
+      }
+
+      get data() {
+        return new Map(JSON.parse(localStorage.getItem('purr-editor::project'))) || new Map()
       }
 
       get fileDrawer() {
@@ -172,45 +180,131 @@
         return this.shadowRoot.querySelector('mode-select');
       }
 
+      isValidURL(url) {
+        let valid = false;
+
+        const routes = [
+          '/#!/settings/general',
+          '/#!/settings/theme',
+          '/#!/settings/keymaps'];
+
+        for (const route of routes) {
+          if (url.includes(route)) {
+            valid = true;
+          }
+        }
+
+        return valid;
+      }
+
       created() {
         this._onTabClosed = this._onTabClosed.bind(this);
         this._onTabClick = this._onTabClick.bind(this);
-        const pages = document.createElement('custom-pages');
-        pages.attrForSelected = 'data-path';
-        const settings = document.createElement('settings-view');
-        settings.dataset.path = 'settings';
-        pages.appendChild(settings);
-        this.appendChild(pages);
-        this.pages.select('home');
+        this._locationHashChanged = this._locationHashChanged.bind(this);
+        this.pagesMap = new Map();
+        this.pagesMap.set('settings', {routes: ['general', 'keymaps', 'theme']});
+        this.pagesMap.set('file', {routes: [/(.*)/]})
       }
 
       ready() {
+        const promises = [];
+        const pages = document.createElement('custom-pages');
+        pages.attrForSelected = 'data-uid';
+        this.appendChild(pages);
+
         this.project = this.project || new Map();
         if (this.data.size > 0) {
-          this.project = this.data;
-          for (const key of this.windowMap.keys()) {
-            this.renderWindow(key);
+          this.project = this.data
+          if (this.windowMap.has('error')) {
+            this.windowMap.remove('error');
           }
-          this.selectedWindow = localStorage.getItem('purr-editor::last-selected');
-          this.projectName = this.project.get('name');
+          for (const entry of this.windowMap.entries()) {
+            const uid = entry[0];
+            if (entry[1] === 'view') {
+              promises.push(this.renderView(uid));
+            } else {
+              promises.push(this.renderWindow(uid));
+            }
+          }
+          // this.projectName = this.project.get('name');
         } else {
-          const data = {
-            name: this.projectName,
-            path: this.projectName,
-            type: 'folder',
-            folderDepth: 0,
-            children: []
-          }
-          this.project.set(this.projectName, data);
+          const data = new PurrFolder(this.projectName, this.projectName);
+          this.project.set(data.uid, data);
           this.project.set('name', this.projectName);
         }
+
+        Promise.all(promises).then(() => {
+          window.onhashchange = this._locationHashChanged;
+          if (!window.location.hash) {
+            window.location.hash = '!/' + localStorage.getItem('purr-editor::last-selected');
+            // this._locationHashChanged({newURL: localStorage.getItem('purr-editor::last-selected')})
+          } else {
+            this._locationHashChanged({newURL: window.location.href})
+          }
+        });
         this.projectChange({value: this.project});
       }
 
+      validPage(page, sub) {
+        const hasPage = this.pagesMap.has(page);
+        if (hasPage) {
+          for (const route of this.pagesMap.get(page).routes) {
+            // if (sub) {
+            if (sub && sub.match(route)) {
+              return true;
+            }
+            // }
+          }
+          return false;
+
+        }
+    		return hasPage;
+    	}
+
+    	_locationHashChanged(change) {
+        let parts = change.newURL.split('#!/');
+        if (parts[1]) {
+          parts = parts[1].split('/');
+      		if(this.validPage(parts[0], parts[1])) {
+            localStorage.setItem('purr-editor::last-selected', `${parts[0]}/${parts[1]}`);
+      			if (parts[0] === 'file') {
+      				customElements.whenDefined('custom-pages').then(() => {
+                this.pages.select(parts[1]);
+              });
+      			} else {
+      				// this.pages.select('load');
+      				this.renderView(parts[0]).then(() => {
+                customElements.whenDefined('custom-pages').then(() => {
+                  this.pages.select(parts[0]);
+                });
+      				});
+      			}
+      			// this._closeDrawerIfNeeded();
+      		} else {
+      			this.renderView('error').then(() => {
+              customElements.whenDefined('custom-pages').then(() => {
+                this.pages.select('error');
+              });
+      			});
+      			// this.showNotification(`404: ${parts[1]} is not one of our pages.`)
+      		}
+        } else {
+          customElements.whenDefined('custom-pages').then(() => {
+            this.pages.select(localStorage.getItem('purr-editor::last-selected')[0]);
+          });
+        }
+
+      }
+
       projectChange(change) {
-        if (change.value && change.value.size > 0) {
+        const project = change.value;
+        if (project && project.size > 0) {
           let calls = 0;
           const nodes = this.tabs.shadowRoot.querySelector('slot[name="tab"]').assignedNodes();
+          if (this.windowMap.has('error')) {
+            this.windowMap.delete('error');
+            localStorage.setItem('purr-editor::windows', JSON.stringify(Array.from(this.windowMap.entries())));
+          }
           for (const property of this.windowMap) {
             let item;
             if (nodes[calls]) {
@@ -218,21 +312,33 @@
             } else {
               item = document.createElement('custom-tab');
             }
-            const prop = this.project.get(property[0]);
-            if (prop.folderDepth > 0) {
-              item.name = prop.name;
+            // console.log(property[0]);
+            if (property[1] === 'view' && property[0] !== 'error') {
+              item.name = property[0];
+              item.dataset.uid = property[0];
               item.slot = 'tab';
-              item.dataset.name = prop.name;
-              item.dataset.path = prop.path;
               item.addEventListener('custom-tab-close', this._onTabClosed);
               item.addEventListener('click', this._onTabClick);
               this.tabs.appendChild(item);
               calls++;
+            } else {
+              const prop = project.get(property[0]);
+              if (prop.folderDepth > 0) {
+                item.name = prop.name;
+                item.slot = 'tab';
+                // item.dataset.name = prop.name;
+                // item.dataset.path = prop.path;
+                item.dataset.uid = prop.uid;
+                item.addEventListener('custom-tab-close', this._onTabClosed);
+                item.addEventListener('click', this._onTabClick);
+                this.tabs.appendChild(item);
+                calls++;
+              }
             }
           }
-          localStorage.setItem('purr-editor::project', JSON.stringify(Array.from(this.project.entries())));
+          localStorage.setItem('purr-editor::project', JSON.stringify(Array.from(project.entries())));
           this.fileDrawer.project = change.value;
-          this.fileDrawer.forceRender();
+          this.fileDrawer.forceRender({value: change.value});
         }
       }
 
@@ -242,54 +348,105 @@
 
       _onTabClick(event) {
         if (event.path[0].localName !== 'svg-icon') {
-          this.onShowFile({detail: event.path[0].dataset.path});
+          this.onShowFile({detail: event.path[0].dataset.uid});
         }
       }
 
       _onTabClosed(event) {
         let calls = 0;
-        const key = event.detail;
+        const key = event.detail.dataset.uid;
         let previousEntry = '';
         for (const entry of this.windowMap.entries()) {
-          previousEntry = entry[0];
           if (entry[0] === key) {
             this.windowMap.delete(key);
-            this.tabs.removeChild(this.tabs.querySelector(`custom-tab[data-path="${key}"]`));
-            this.pages.removeChild(this.querySelector(`ace-window[data-path="${key}"]`));
-            if (!previousEntry) {
-              previousEntry = this.windowMap.keys()[0][0]
-              return;
+            this.tabs.removeChild(this.tabs.querySelector(`custom-tab[data-uid="${key}"]`));
+            if (entry[1] === 'view') {
+              this.pages.removeChild(this.querySelector(`${entry[0]}-view[data-uid="${key}"]`));
+            } else {
+              this.pages.removeChild(this.querySelector(`ace-window[data-uid="${key}"]`));
             }
+          } else {
+            previousEntry = entry[0];
+          }
+
+          if (!previousEntry) {
+            previousEntry = this.windowMap.keys()[0] ? this.windowMap.keys()[0] : null;
+            // return;
           }
           calls++;
         }
-
-        localStorage.setItem('purr-editor::windows', JSON.stringify(Array.from(this.windowMap.entries())));
+        if (this.windowMap.size === 0) {
+          localStorage.removeItem('purr-editor::windows');
+        } else {
+          localStorage.setItem('purr-editor::windows', JSON.stringify(Array.from(this.windowMap.entries())));
+        }
         this.selectedWindow = previousEntry;
       }
 
-      renderWindow(key) {
+      _renderWindow(key) {
+        ace.require('ace/ext/language_tools');
         const item = this.project.get(key);
         const contents = item.contents;
         const aceWindow = document.createElement('ace-window');
         const config = JSON.parse(localStorage.getItem('purr::config'));
-        aceWindow.contents = contents;
+        aceWindow.contents = contents.length > 0 ? contents : '__purr__editor';
         aceWindow.path = key;
         // check path for extension and set desired mode
         aceWindow.mode = String(item.mode).toLowerCase();
         aceWindow.theme = config ? config.theme : 'github';
-        aceWindow.dataset.path = key;
+        aceWindow.dataset.uid = key;
         this.pages.appendChild(aceWindow);
       }
 
+      renderWindow(key) {
+        return new Promise((resolve, reject) => {
+          if (window.ace) {
+            this._renderWindow(key);
+            return resolve();
+          } else if (!window.ace && this.aceLoading) {
+            this.queriedWindows.push(key);
+            // TODO: replace timeout with event (timeout blocks ....)
+            return setTimeout(() => {
+              for (const i of this.queriedWindows) {
+                this.renderWindow(key).then(() => resolve())
+              }
+            }, 500);
+          }
+          this.aceLoading = true;
+          this.loadScript(this.aceLocation + 'ace.js').then(() => {
+            this.loadScript(this.aceLocation + 'ext-language_tools.js').then(() => {
+              this.aceLoading = false;
+              this.aceLoaded = true;
+              this._renderWindow(key);
+              resolve();
+            });
+          });
+          // requestAnimationFrame(() => {
+          // });
+        });
+      }
+
       selectedWindowChanged(change) {
+        console.log(change);
         if (change.value) {
-          this.pages.select(change.value);
+          // customElements.whenDefined(['custom-pages']).then(() => {
+          //
+          //   this.pages.select(change.value);
+          // })
+
+          switch (change.value) {
+            case 'settings':
+              window.location.hash = '!/settings/' + localStorage.getItem('purr-editor::last-selected-setting');
+            case 'error':
+              break;
+            default:
+            window.location.hash = '!/file/' + change.value
+          }
+
+          if (this.data.has(change.value)) {
+            this.modeSelect.selected = this.data.get(change.value).mode;
+          }
         }
-        if (this.project.has(change.value)) {
-          this.modeSelect.selected = this.project.get(change.value).mode;
-        }
-        localStorage.setItem('purr-editor::last-selected', change.value);
       }
 
       renderTab(key) {
@@ -298,8 +455,9 @@
         item.name = prop.name;
         item.slot = 'tab';
         item.dataset.name = prop.name;
-        item.dataset.path = prop.path;
+        item.dataset.uid = prop.uid;
         item.addEventListener('custom-tab-close', this._onTabClosed);
+        item.addEventListener('click', this._onTabClick);
         this.tabs.appendChild(item);
       }
 
@@ -315,9 +473,77 @@
         this.selectedWindow = key;
       }
 
+      importHref(href) {
+        return new Promise((resolve, reject) => {
+          let link = document.createElement('link');
+          link.rel = 'import';
+          link.href = href;
+          link.onload = result => {
+            resolve(result);
+          }
+          link.onerror = error => {
+            reject(error);
+          }
+          document.body.appendChild(link);
+        });
+      }
+
+      promiseView(view) {
+        return new Promise((resolve, reject) => {
+          const el = document.createElement(`${view}-view`);
+          if (el && el.ready) {
+            customElements.whenDefined([`${view}-view`]).then(() => {
+              if (!this.pages.querySelector(`${view}-view`)) {
+                this.pages.appendChild(el);
+              }
+
+              el.dataset.uid = view;
+              resolve();
+            })
+          } else {
+            this.importHref(`src/views/${view}-view.html`).then(() => {
+              customElements.whenDefined([`${view}-view`]).then(() => {
+                this.pages.appendChild(el);
+                el.dataset.uid = view;
+                resolve();
+              })
+            });
+          }
+
+        });
+      }
+
+      isDefined(el) {
+        return new Promise((resolve, reject) => {
+          customElements.whenDefined([el]).then(() => {resolve()})
+        });;
+      }
+
+      renderView(view) {
+        return new Promise((resolve, reject) => {
+          this.promiseView(view).then(() => {
+            if (!this.windowMap.has(view)) {
+              this.windowMap.set(view, 'view');
+              const item = document.createElement('custom-tab');
+              item.name = view;
+              item.dataset.uid = view;
+              item.slot = 'tab';
+              item.addEventListener('custom-tab-close', this._onTabClosed);
+              item.addEventListener('click', this._onTabClick);
+              this.tabs.appendChild(item);
+              localStorage.setItem('purr-editor::windows', JSON.stringify(Array.from(this.windowMap.entries())));
+            }
+            resolve();
+            // this.onShowFile({detail: view});
+          });
+        });
+      }
+
       onSettingsClick() {
-        this.pages.select('settings');
-        localStorage.setItem('purr-editor::last-selected', 'settings');
+        if (!localStorage.getItem('purr-editor::last-selected-setting')) {
+          localStorage.setItem('purr-editor::last-selected-setting', 'general');
+        }
+        this.selectedWindow = 'settings';
       }
 
       resize(selector, value) {
@@ -369,8 +595,8 @@
 
       onDownload(event) {
         if (!window.JSZip) {
-          this.loadScript('/bower_components/jszip/dist/jszip.min.js').then(() => {
-            this.loadScript('/bower_components/file-saver/FileSaver.min.js').then(() => {
+          this.loadScript('bower_components/jszip/dist/jszip.min.js').then(() => {
+            this.loadScript('bower_components/file-saver/FileSaver.min.js').then(() => {
               this._createZip(this.project);
             });
           });

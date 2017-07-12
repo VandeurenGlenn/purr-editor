@@ -1,0 +1,12 @@
+<script>
+  'use strict';
+  window.LocalStorageMapMixin = (base) => class extends base {
+    localSet(value) {
+      localStorage.setItem(this.localNS, JSON.stringify(Array.from(value)));
+    }
+
+    localGet() {
+      return new Map(JSON.parse(localStorage.getItem(this.localNS)))
+    }
+  }
+</script>

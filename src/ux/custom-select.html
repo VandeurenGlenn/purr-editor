@@ -39,21 +39,23 @@
       this.dispatchEvent(new CustomEvent('custom-select', {detail: this.select.value}));
     }
     itemsChanged(change) {
-      for (const item of this.items) {
-        let optgroup = this.select.querySelector('optgroup[label="'+ item.type +'"]')
-        if (!optgroup && item.type) {
-          optgroup = document.createElement('optgroup');
-          optgroup.setAttribute('label', item.type);
-          this.select.appendChild(optgroup)
-        }
-        let option = document.createElement('option');
-        // item = item.replace(/"/g, '');
-        option.value = item.name;
-        option.innerHTML = item.name;
-        if (item.type) {
-          optgroup.appendChild(option);
-        } else {
-          this.select.appendChild(option);
+      if (change.value) {
+        for (const item of change.value) {
+          let optgroup = this.select.querySelector('optgroup[label="'+ item.type +'"]')
+          if (!optgroup && item.type) {
+            optgroup = document.createElement('optgroup');
+            optgroup.setAttribute('label', item.type);
+            this.select.appendChild(optgroup)
+          }
+          let option = document.createElement('option');
+          // item = item.replace(/"/g, '');
+          option.value = item.name;
+          option.innerHTML = item.name;
+          if (item.type) {
+            optgroup.appendChild(option);
+          } else {
+            this.select.appendChild(option);
+          }
         }
       }
     }
