@@ -94,7 +94,14 @@
       if (ctrlKey && key === 's') {
         event.preventDefault();
         if (!this.autoSave) {
-          this.save();
+          // this.save().then(() => {
+            this.shouldSave = false;
+            document.dispatchEvent(new CustomEvent('ace-window-contents-change', {detail: {
+              key: this.dataset.uid,
+              contents: this.ace.getValue(),
+              reason: 'save'
+            }}))
+          // });
         }
       }
     }
@@ -135,18 +142,24 @@
             this.save();
           }, this.autoSaveTimeout);
         } else {
-
+          this.shouldSave = true;
+          document.dispatchEvent(new CustomEvent('ace-window-contents-change', {detail: {
+            key: this.dataset.uid
+          }}))
           // this.save();
         }
       }
     }
 
     save() {
-      const project = new Map(JSON.parse(localStorage.getItem('purr-editor::project')));
-      const file = project.get(this.dataset.uid);
-      file.contents = this.ace.getValue()
-      project.set(this.dataset.uid, file);
-      localStorage.setItem('purr-editor::project', JSON.stringify(Array.from(project)))
+      return new Promise((resolve, reject) => {
+        const project = new Map(JSON.parse(localStorage.getItem('purr-editor::project')));
+        const file = project.get(this.dataset.uid);
+        file.contents = this.ace.getValue();
+        project.set(this.dataset.uid, file);
+        localStorage.setItem('purr-editor::project', JSON.stringify(Array.from(project)));
+        resolve();
+      });
     }
 
     needsLoad(key) {

@@ -83,6 +83,20 @@
     svg-icon[icon="file-download"] {
       padding-left: 8px;
     }
+    custom-tab .save-bullet {
+      opacity: 0;
+      border-radius: 50%;
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 9px;
+      height: 9px;
+      background: orange;
+    }
+    custom-tab:not(.over).needs-save .save-bullet {
+      opacity: 1;
+    }
   </style>
   <div class="wrapper">
     <file-drawer on-show-file="onShowFile">
@@ -201,6 +215,7 @@
         this._onTabClosed = this._onTabClosed.bind(this);
         this._onTabClick = this._onTabClick.bind(this);
         this._locationHashChanged = this._locationHashChanged.bind(this);
+        this._onAceWindowContentsChange = this._onAceWindowContentsChange.bind(this);
         this.pagesMap = new Map();
         this.pagesMap.set('settings', {routes: ['general', 'keymaps', 'theme']});
         this.pagesMap.set('file', {routes: [/(.*)/]})
@@ -212,7 +227,8 @@
           if (ctrlKey && key === 's') {
             event.preventDefault();
           }
-        })
+        });
+        document.addEventListener('ace-window-contents-change', this._onAceWindowContentsChange)
         const promises = [];
         const pages = document.createElement('custom-pages');
         pages.attrForSelected = 'data-uid';
@@ -249,6 +265,22 @@
           }
         });
         this.projectChange({value: this.project});
+      }
+
+      _onAceWindowContentsChange(event) {
+        // TODO: handle save after app close ...
+        const { key, reason, contents } = event.detail;
+        const tab = this.tabs.querySelector(`custom-tab[data-uid="${key}"]`);
+        const project = this.project;
+        const file = project.get(key);
+        if (reason === 'save') {
+          file.contents = contents;
+          tab.classList.remove('needs-save');
+        } else {
+          tab.classList.add('needs-save');
+        }
+        project.set(key, file);
+        localStorage.setItem('purr-editor::project', JSON.stringify(Array.from(project.entries())));
       }
 
       validPage(page, sub) {
@@ -318,7 +350,6 @@
             } else {
               item = document.createElement('custom-tab');
             }
-            // console.log(property[0]);
             if (property[1] === 'view' && property[0] !== 'error') {
               item.name = property[0];
               item.dataset.uid = property[0];
@@ -330,14 +361,7 @@
             } else {
               const prop = project.get(property[0]);
               if (prop.folderDepth > 0) {
-                item.name = prop.name;
-                item.slot = 'tab';
-                // item.dataset.name = prop.name;
-                // item.dataset.path = prop.path;
-                item.dataset.uid = prop.uid;
-                item.addEventListener('custom-tab-close', this._onTabClosed);
-                item.addEventListener('click', this._onTabClick);
-                this.tabs.appendChild(item);
+                this.renderTab(property[0]);
                 calls++;
               }
             }
@@ -433,13 +457,7 @@
       }
 
       selectedWindowChanged(change) {
-        console.log(change);
         if (change.value) {
-          // customElements.whenDefined(['custom-pages']).then(() => {
-          //
-          //   this.pages.select(change.value);
-          // })
-
           switch (change.value) {
             case 'settings':
               window.location.hash = '!/settings/' + localStorage.getItem('purr-editor::last-selected-setting');
@@ -457,8 +475,11 @@
 
       renderTab(key) {
         const prop = this.project.get(key);
-        const item = document.createElement('custom-tab')
-        item.name = prop.name;
+        const item = document.createElement('custom-tab');
+
+        const div = document.createElement('div');
+        div.classList.add('.save-bullet')
+        item.name = prop.name + '<div class="save-bullet"></div>';
         item.slot = 'tab';
         item.dataset.name = prop.name;
         item.dataset.uid = prop.uid;
