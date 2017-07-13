@@ -2,10 +2,21 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <meta name=viewport content="width=device-width, initial-scale=1">
     <title>Purr Editor</title>
+    <!-- Mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Chrome / Android -->
+    <meta name="mobile-web-app-capable" content="yes">
+     <!-- Blue Grey 700 -->
+    <meta name="theme-color" content="#263238">
+
+    <!-- Import manifest for serviceWorker, pushNotifications & addToHomeScreen support. -->
+    <link rel="manifest" href="manifest.json">
+
     <link rel="import" href="src/service-worker-registration.html">
     <link rel="import" href="src/purr-editor.html">
+    <link rel="import" href="src/styles/ace-custom-styles.html">
     <style>
       html, body {
         margin: 0;
@@ -17,6 +28,6 @@
   </head>
   <body>
     <purr-editor></purr-editor>
-    <noscript>Purr is only supported on chrome for now, more browser support coming soon.</noscript>
+    <noscript>Purr is only supported on chrome at the moment and rendering happens on client side, more browser support and render options coming soon.</noscript>
   </body>
 </html>
