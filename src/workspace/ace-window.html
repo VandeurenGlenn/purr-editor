@@ -9,6 +9,9 @@
       opacity: 0;
       pointer-events: none;
     }
+    ::slotted(.ace_tooltip) {
+      background: red
+    }
   </style>
   <slot></slot>
 </template>
@@ -78,7 +81,17 @@
       this.ace.setOptions({
           enableBasicAutocompletion: this.basicAutocompletion,
           enableSnippets: this.snippets,
-          enableLiveAutocompletion: this.liveAutocompletion
+          enableLiveAutocompletion: {
+            set: val => {
+              if (val) {
+                // Trigger the autocomplete on each change
+                this.editor.commands.on('afterExec', this.doLiveAutocomplete);
+              } else {
+                this.editor.commands.removeListener('afterExec', this.doLiveAutocomplete);
+              }
+            },
+            value: this.liveAutocompletion
+          }
       });
       this.ace.addEventListener('change', this.__contentsChanged__);
       this.appendChild(this.editor);
@@ -186,6 +199,52 @@
         });
       } else {
         this.ace.getSession().setMode('ace/mode/' + mode);
+      }
+    }
+
+    getCompletionPrefix(editor) {
+      var pos = editor.getCursorPosition();
+      var line = editor.session.getLine(pos.row);
+      var prefix = util.retrievePrecedingIdentifier(line, pos.column);
+      // Try to find custom prefixes on the completers
+      editor.completers.forEach(function(completer) {
+        if (completer.identifierRegexps) {
+          completer.identifierRegexps.forEach(function(identifierRegex) {
+            if (!prefix && identifierRegex)
+              prefix = util.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
+          });
+        }
+      });
+      return prefix;
+    }
+
+    doLiveAutocomplete(e) {
+      var editor = e.editor;
+      var text = e.args || "";
+      var hasCompleter = editor.completer && editor.completer.activated;
+
+      // We don't want to autocomplete with no prefix
+      if (e.command.name === "backspace") {
+        if (hasCompleter && !getCompletionPrefix(editor))
+            editor.completer.detach();
+      }
+      else if (e.command.name === "insertstring") {
+        var prefix = getCompletionPrefix(editor);
+        // Only autocomplete if there's a prefix that can be matched
+        if (prefix && !hasCompleter) {
+            if (!editor.completer) {
+                // Create new autocompleter
+                editor.completer = new Autocomplete();
+            }
+            // Disable autoInsert
+            editor.completer.autoSelect = false;
+            editor.completer.autoInsert = false;
+            editor.completer.showPopup(editor);
+        } else if (!prefix && hasCompleter) {
+            // When the prefix is empty
+            // close the autocomplete dialog
+            editor.completer.detach();
+        }
       }
     }
   });

@@ -452,6 +452,7 @@
           this.aceLoading = true;
           this.loadScript(this.aceLocation + 'ace.js').then(() => {
             this.loadScript(this.aceLocation + 'ext-language_tools.js').then(() => {
+              ace.require("ace/ext/language_tools").snippetCompleter.getDocTooltip = null
               this.aceLoading = false;
               this.aceLoaded = true;
               this._renderWindow(key);
