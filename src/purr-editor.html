@@ -361,7 +361,14 @@
             } else {
               const prop = project.get(property[0]);
               if (prop.folderDepth > 0) {
-                this.renderTab(property[0]);
+                item.name = prop.name;
+                item.slot = 'tab';
+                // item.dataset.name = prop.name;
+                // item.dataset.path = prop.path;
+                item.dataset.uid = prop.uid;
+                item.addEventListener('custom-tab-close', this._onTabClosed);
+                item.addEventListener('click', this._onTabClick);
+                this.tabs.appendChild(item);
                 calls++;
               }
             }
