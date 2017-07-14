@@ -170,6 +170,11 @@
 
           queriedWindows: {
             value: []
+          },
+
+          keyMap: {
+            global: true,
+            value: new Map()
           }
         }
       }
@@ -421,7 +426,6 @@
       }
 
       _renderWindow(key) {
-        ace.require('ace/ext/language_tools');
         const item = this.project.get(key);
         const contents = item.contents;
         const aceWindow = document.createElement('ace-window');
@@ -452,7 +456,7 @@
           this.aceLoading = true;
           this.loadScript(this.aceLocation + 'ace.js').then(() => {
             this.loadScript(this.aceLocation + 'ext-language_tools.js').then(() => {
-              ace.require("ace/ext/language_tools").snippetCompleter.getDocTooltip = null
+              ace.require("ace/ext/language_tools").snippetCompleter.getDocTooltip = null;
               this.aceLoading = false;
               this.aceLoaded = true;
               this._renderWindow(key);
@@ -503,9 +507,12 @@
           this.windowMap.set(key, true);
           localStorage.setItem('purr-editor::windows', JSON.stringify(Array.from(this.windowMap.entries())));
           this.renderTab(key);
-          this.renderWindow(key);
+          this.renderWindow(key).then(() => {
+            this.selectedWindow = key;
+          });
+        } else {
+          this.selectedWindow = key;
         }
-        this.selectedWindow = key;
       }
 
       importHref(href) {
