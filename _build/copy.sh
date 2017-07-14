@@ -8,3 +8,5 @@ cp -u -f -R bower_components/jszip/dist/*min.js $PRE_DEST/jszip/dist/jszip.min.j
 
 mkdir -p $PRE_DEST/file-saver
 cp -u -f -R bower_components/file-saver/*min.js $PRE_DEST/file-saver/FileSaver.min.js
+
+cp -u -f -R manifest.json build/bundled/manifest.json
