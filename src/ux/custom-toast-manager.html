@@ -1,0 +1,57 @@
+<link rel="import" href="custom-toast.html">
+
+<template id="custom-toast-manager">
+  <slot></slot>
+</template>
+
+<script>
+  Backed(class CustomToastManager extends HTMLElement {
+    static get properties() {
+      return {
+        toasts: {
+          value: []
+        }
+      }
+    }
+
+    new({text, action}) {
+      console.log(text, action);
+      customElements.whenDefined('custom-toast').then(() => {
+        const toast = document.createElement('custom-toast');
+        this.appendChild(toast);
+        toast.text = text;
+        if (action) {
+
+        }
+        this.add(toast);
+      });
+    }
+
+    add(toast) {
+      this.toasts.push(toast);
+
+      if (!this.running) {
+        this.run();
+      }
+    }
+
+    run() {
+      this.running = true;
+      for (const toast of this.toasts) {
+        return this.promisToast(toast);
+      }
+      this.running = false;
+    }
+
+    promisToast(toast) {
+      console.log(toast);
+      return toast.open().then(() => {
+        const index = this.toasts.indexOf(toast);
+        if (index !== -1) {
+          this.toasts.splice(index, 1);
+        }
+        this.run();
+      });
+    }
+  })
+</script>

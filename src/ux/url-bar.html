@@ -75,30 +75,7 @@
   <input type="text" name="path" required>
   <custom-divider></custom-divider>
 </template>
-
-<template id="custom-toast">
-  <style>
-    :host {
-      display: flex;
-      flex-direction: row;
-      opacity: 0;
-    }
-
-    .shown {
-      opacity: 1;
-    }
-  </style>
-</template>
 <script>
-  Backed(class CustomToast extends HTMLElement {
-    show() {
-      this.classList.add('shown')
-    }
-
-    hide() {
-      this.classList.remove('shown')
-    }
-  });
   Backed(class UrlBar extends HTMLElement {
 
     set title(value) {
