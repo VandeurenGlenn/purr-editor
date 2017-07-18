@@ -397,7 +397,7 @@
           if (value === '__purr__escaped') {
             return;
           }
-          const currentWindow = this.querySelector(`ace-window[data-uid="${this.selectedWindow}"]`);
+          const currentWindow = this.pages.querySelector(`ace-window[data-uid="${this.selectedWindow}"]`);
           currentWindow.gotoLine(value);
         });
       }
@@ -405,7 +405,7 @@
       _onAnnotationClick(event) {
         const target = event.path[0];
         if (target.localName === 'purr-annotation') {
-          const currentWindow = this.querySelector(`ace-window[data-uid="${this.selectedWindow}"]`);
+          const currentWindow = this.pages.querySelector(`ace-window[data-uid="${this.selectedWindow}"]`);
           currentWindow.gotoLine(`${target.row}:${target.column}`);
           this.annotations.close();
         }
@@ -497,10 +497,12 @@
                 this.annotations.selected = parts[1];
 
 
-                const currentWindow = this.querySelector(`ace-window[data-uid="${parts[1]}"]`);
-                const row = currentWindow.row;
-                const column = currentWindow.column;
-                this._onCursorChange({detail: {row, column, uid: parts[1]}});
+                const currentWindow = this.pages.querySelector(`ace-window[data-uid="${parts[1]}"]`);
+                if (currentWindow) {
+                  const row = currentWindow.row;
+                  const column = currentWindow.column;
+                  this._onCursorChange({detail: {row, column, uid: parts[1]}});
+                }
               });
       			} else { // render view
       				// this.pages.select('load');
