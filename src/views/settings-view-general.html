@@ -108,7 +108,6 @@
     }
 
     __configObserver__(change) {
-      console.log(change);
       if (change.value) {
         for (const item of change.value.entries()) {
           if (typeof item[1] === 'boolean') {
@@ -120,7 +119,6 @@
     }
 
     _onSettingChange(event) {
-      console.log(event);
       const { name, value } = event.detail;
       this.localSet(this.config.set(name, value));
       this.__configObserver__({change: this.config})

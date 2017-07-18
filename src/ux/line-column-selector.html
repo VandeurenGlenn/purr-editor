@@ -1,0 +1,64 @@
+<template id="line-column-selector">
+  <style>
+    :host {
+      display: flex;
+      padding: 8px;
+      box-sizing: border-box;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--purr-toolbar-text-color, #FFF);
+      opacity: 1;
+      transition: transform ease-in 160ms, opacity ease-in 160ms;
+    }
+    :host(.over) {
+      text-decoration: underline;
+    }
+
+    :host(.hide) {
+      opacity: 0;
+      transform: translateY(110%);
+      transition: transform ease-out 160ms, opacity ease-out 160ms;
+    }
+  </style>
+  <slot></slot>
+</template>
+
+<script>
+  Backed(class LineColumnSelector extends HTMLElement {
+    static get properties() {
+      return {
+        value: {
+          observer: '__valueObserver'
+        }
+      }
+    }
+
+    created() {
+      this._mouseover = this._mouseover.bind(this);
+      this._mouseout = this._mouseout.bind(this);
+      // hide after created so animation is run from start.
+      this.classList.add('hide');
+    }
+
+    ready() {
+      this.addEventListener('mouseover', this._mouseover);
+      this.addEventListener('mouseout', this._mouseout);
+    }
+
+    _mouseover() {
+      this.classList.add('over');
+    }
+    _mouseout() {
+      this.classList.remove('over');
+    }
+
+    __valueObserver({value}) {
+      if (value.row === null) {
+        return this.classList.add('hide');
+      } else {
+        this.classList.remove('hide');
+      }
+      this.innerHTML = `${value.row + 1}:${value.column}`;
+    }
+  });
+</script>

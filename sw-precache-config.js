@@ -5,7 +5,8 @@ module.exports = {
     'build/bundled/src/views/settings-view.html',
     'build/bundled/bower_components/ace-builds/src-min-noconflict/**.*',
     'build/bundled/bower_components/jszip/dist/jszip.min.js',
-    'build/bundled/bower_components/file-saver/FileSaver.min.js'
+    'build/bundled/bower_components/file-saver/FileSaver.min.js',
+    "sources/**/**"
   ],
   stripPrefix: 'build/bundled/'
 };

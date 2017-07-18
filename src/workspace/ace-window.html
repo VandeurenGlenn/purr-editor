@@ -2,6 +2,10 @@
 
 <template id="ace-window">
   <style>
+    :host {
+      display: block;
+      z-index: 0;
+    }
     ::slotted(.ace) {
       flex: 1;
     }
@@ -22,10 +26,6 @@
     static get properties() {
       return {
 
-        loadedMap: {
-          value: new Map()
-        },
-
         lib: {
           value: 'bower_components/ace-builds/src-min-noconflict/'
         },
@@ -35,7 +35,6 @@
         },
 
         theme: {
-          value: 'github',
           observer: 'render'
         },
 
@@ -58,6 +57,10 @@
         config: {
           value: null,
           observer: '__configObserver__'
+        },
+
+        keyMap: {
+          value: window.keyMap || new Map()
         }
       }
     }
@@ -77,9 +80,10 @@
     }
 
     ready() {
+      this.setAttribute('tabindex', 0)
       this.ace = ace.edit(this.editor);
       this.ace.setOptions({
-          enableBasicAutocompletion: this.basicAutocompletion,
+          enableBasicAutocompletion: this.basicAutoCompletion,
           enableSnippets: this.snippets,
           enableLiveAutocompletion: {
             set: val => {
@@ -93,6 +97,30 @@
             value: this.liveAutocompletion
           }
       });
+      // watch for annotation changes
+      this.ace.getSession().on("changeAnnotation", () => {
+        const annotations = this.ace.getSession().getAnnotations();
+
+        if (annotations && annotations.length > 0) {
+          document.dispatchEvent(new CustomEvent('annotations-change', {
+            detail: {
+              uid: this.dataset.uid,
+              annotations
+            }
+          }));
+        }
+      });
+      this.ace.getSession().selection.on('changeCursor', event => {
+        const {row, column} = this.ace.selection.getCursor();
+        this.row = row;
+        this.column = column;
+        document.dispatchEvent(new CustomEvent('cursor-change', {
+          detail: {row, column, uid: this.dataset.uid}
+        }));
+      });
+      this.gotoLine(1);
+      // this.ace.commands.removeCommand('showSettingsMenu');
+      this._setupKeyMap();
       this.ace.addEventListener('change', this.__contentsChanged__);
       this.appendChild(this.editor);
       this.addEventListener('keydown', this.onKeyDown);
@@ -100,6 +128,15 @@
 
     disconnected() {
       this.removeEventListener('keydown', this.onKeyDown);
+    }
+
+    gotoLine(value) {
+      if (typeof value === 'string' && value.includes(':')) {
+        const parts = value.split(':');
+        this.ace.gotoLine(parts[0], parts[1]);
+      } else {
+        this.ace.gotoLine(value, 0);
+      }
     }
 
     onKeyDown(event) {
@@ -127,9 +164,37 @@
       }
     }
 
-    __setupAce() {
-      this.ace = ace.edit(this.editor);
-      this.ace.addEventListener('change', this.__contentsChanged__);
+    _setupKeyMap() {
+      this.ace.commands.addCommand({
+        name: 'showSettingsMenu',
+        bindKey: {win: 'Ctrl-,',  mac: 'Command-,'},
+        exec: function(editor) {
+          window.location.hash = '!/settings/' + localStorage.getItem('purr-editor::last-selected-setting');
+        },
+        readOnly: true // false if this command should not apply in readOnly mode
+      });
+
+      this.ace.commands.addCommand({
+        name: 'gotoline',
+        bindKey: {win: 'Ctrl-L',  mac: 'Command-L'},
+        exec: function(editor) {
+          document.dispatchEvent(new CustomEvent('goto-line'));
+          // window.location.hash = '!/settings/' + localStorage.getItem('purr-editor::last-selected-setting');
+        },
+        readOnly: true // false if this command should not apply in readOnly mode
+      });
+
+      const { byName, platform } = this.ace.commands;
+      for (const name of Object.keys(byName)) {
+        if (!this.keyMap.has(name)) {
+          // copy, paste, cut, etc... do not have bindings
+          if (byName[name].hasOwnProperty('bindKey')) {
+            const keys = byName[name].bindKey[platform] ||byName[name].bindKey
+            this.keyMap.set(name, keys);
+          }
+        }
+      }
+      window.keyMap = this.keyMap;
     }
 
     render(change) {
@@ -175,31 +240,12 @@
       });
     }
 
-    needsLoad(key) {
-      return this.loadedMap.has(key)
-    }
-
     setTheme(theme) {
-      if (this.needsLoad(theme)) {
-        this.loadScript(this.lib + 'theme-' + theme + '.js').then(() => {
-          this.ace.setTheme('ace/theme/' + theme);
-        });
-      } else {
-        this.ace.setTheme('ace/theme/' + theme);
-      }
-
+      this.ace.setTheme('ace/theme/' + theme);
     }
 
     setMode(mode) {
-      if (this.needsLoad(mode)) {
-        // load mode
-        this.loadScript(this.lib + 'mode-' + mode + '.js').then(() => {
-          this.ace.getSession().setMode('ace/mode/' + mode);
-          this.loadedMap.set(mode, true);
-        });
-      } else {
-        this.ace.getSession().setMode('ace/mode/' + mode);
-      }
+      this.ace.getSession().setMode('ace/mode/' + mode);
     }
 
     getCompletionPrefix(editor) {

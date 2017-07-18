@@ -3,24 +3,173 @@
 <template id="settings-view-keymaps">
   <style>
     :host {
+      display: block;
+    }
+    .container {
       display: flex;
       flex-direction: column;
       height: 100%;
       width: 100%;
+      overflow: auto;
+      text-transform: capitalize;
+      padding: 48px;
+      box-sizing: border-box;
+    }
+    h2, h5 {
+      margin: 0;
+    }
+    h2 {
+      padding-bottom: 48px;
+    }
+    .bar {
+      display: block;
+      width: 100%;
+      height: 56px;
+    }
+    .bar-content {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      height: 56px;
+      box-sizing: border-box;
+      padding: 12px;
+    }
+    .flex {
+      flex: 1;
+    }
+    .wrapper {
+      border: 1px solid #EEE;
+    }
+    .align-left {
+      text-align: left;
+      width: 164px;
+    }
+  </style>
+  <div class="container">
+    <h2>keymaps</h2>
+
+    <div class="wrapper">
+      <div class="bar">
+        <div class="bar-content">
+          <h5>command</h5>
+          <span class="flex"></span>
+          <h5 class="align-left">keystroke</h5>
+        </div>
+      </div>
+
+      <custom-divider></custom-divider>
+      <slot></slot>
+    </div>
+  </div>
+</template>
+
+<template id="key-map-item">
+  <style>
+    :host {
+      display: block;
+      height: 48px;
+      width: 100%;
+      padding: 12px;
+      box-sizing: border-box;
     }
     h2 {
       margin: 0;
-      padding: 8px;
+    }
+
+    .container {
+      flex-direction: row;
+      display: flex;
+    }
+    .flex {
+      flex: 1;
+    }
+    .map {
+      text-align: left;
+      width: 164px;
     }
   </style>
-  <h2>keymaps</h2>
 
-  <custom-divider></custom-divider>
+  <div class="container">
+    <div class="name"></div>
+    <span class="flex"></span>
+    <div class="map"></div>
+  </div>
 
 </template>
 
 <script>
-  Backed(class SettingsViewKeymaps extends HTMLElement {
+  Backed(class KeyMapItem extends HTMLElement {
+    static get properties() {
+      return {
+        name: {
+          value: null,
+          observer: 'render'
+        },
 
+        keyMap: {
+          value: null,
+          observer: 'render'
+        }
+      }
+    }
+
+    render() {
+      if (this.name && this.keyMap) {
+        this.shadowRoot.querySelector('.name').innerHTML = this.name;
+        this.shadowRoot.querySelector('.map').innerHTML = this.keyMap;
+      }
+    }
+  })
+  Backed(class SettingsViewKeymaps extends HTMLElement {
+    static get properties() {
+      return {
+        // keyMap: {
+        //   observer: 'keyMapChange'
+        // }
+      }
+    }
+
+    static get observers() {
+      return ['keyMapChange(keyMap)']
+    }
+
+    get keyMap() {
+      return window.keyMap;
+    }
+
+    ready() {
+      this.keyMap = window.keyMap;
+      if (!this.keyMap) {
+        requestAnimationFrame(() => {
+          this.keyMap = window.keyMap;
+        });
+      }
+    }
+
+    keyMapChange(change) {
+      if (change.value) this.render(change.value);
+    }
+
+    render(map) {
+      if (map.size > 0) {
+        let call = 0;
+        const children = this.shadowRoot.querySelectorAll('key-map-item') || [];
+        for (const item of map.entries()) {
+          let child;
+          if (children[call]) {
+            child = children[call++];
+          } else {
+            child = document.createElement('key-map-item');
+            if (call > 0) {
+              this.appendChild(document.createElement('custom-divider'))
+            }
+            this.appendChild(child);
+          }
+          child.name = item[0];
+          child.keyMap = item[1];
+          call++
+        }
+      }
+    }
   })
 </script>

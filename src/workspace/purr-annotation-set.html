@@ -1,0 +1,224 @@
+<template id="purr-annotation-set">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      background: #FFF;
+      box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+                  0 1px 5px 0 rgba(0, 0, 0, 0.12),
+                  0 3px 1px -2px rgba(0, 0, 0, 0.2);
+      width: 320px;
+      height: 320px;
+      position: absolute;
+      bottom: 36px;
+      left: 0;
+      pointer-events: none !important;
+    }
+
+    :host(.opened) {
+      opacity: 1;
+      z-index: 100;
+    }
+
+    :host(.opened) .wrapper {
+      pointer-events: auto;
+    }
+
+    .wrapper {
+      pointer-events: none;
+      overflow: auto;
+    }
+
+    input {
+      user-select: none;
+      outline: none;
+      /*position: fixed;*/
+    }
+    input, custom-select {
+      pointer-events: auto;
+    }
+  </style>
+  <span class="heading">
+    <input type="text" name="filter" placeholder="filter" tabindex="1">
+    <custom-select class="type-select" on-custom-select="_onCustomSelectChange" tabindex="1"></custom-select>
+  </span>
+  <div class="wrapper">
+    <slot></slot>
+  </div>
+</template>
+
+<template id="purr-annotation">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: row;
+      padding: 8px;
+      align-items: center;
+      user-select: none;
+      outline: none;
+    }
+    .flex {
+      flex: 1;
+    }
+
+    svg-icon {
+      --svg-icon-color: #888;
+      padding-right: 8px;
+    }
+    p, svg-icon {
+      pointer-events: none;
+    }
+
+    svg-icon[icon="info"] {
+      --svg-icon-color: #448AFF;
+    }
+
+    svg-icon[icon="error"] {
+      --svg-icon-color: #FF5252;
+    }
+
+    svg-icon[icon="warning"] {
+      --svg-icon-color: #FFAB40;
+    }
+  </style>
+  <svg-icon></svg-icon>
+  <p class="text"></p>
+  <span class="flex"></span>
+  <p class="row"></p>:<p class="column"></p>
+</template>
+
+<script>
+  Backed(class PurrAnnotation extends HTMLElement {
+
+    set textLimit(value) {
+      this._textLimit = value;
+    }
+
+    get textLimit() {
+      return this._textLimit || 25;
+    }
+
+    set annotation(value) {
+      let title = '';
+      let {text} = value;
+      this.type = value.type;
+      this.row = value.row + 1;
+      // TODO: should display end of line
+      this.column = value.column; // || 0;
+      if (text.length > this.textLimit) {
+        title = text;
+        text = `${text.slice(0, this.textLimit)}...`;
+      }
+      this.text = text;
+      this.setAttribute('title', title);
+    }
+
+    get rowEl() {
+      return this.shadowRoot.querySelector('.row');
+    }
+
+    get columnEl() {
+      return this.shadowRoot.querySelector('.column');
+    }
+
+    get row() {
+      return Number(this.rowEl.innerHTML);
+    }
+
+    get column() {
+      return Number(this.columnEl.innerHTML);
+    }
+
+    set type(value) {
+      this.shadowRoot.querySelector('svg-icon').setAttribute('icon', value);
+    }
+
+    set text(value) {
+      this.shadowRoot.querySelector('.text').innerHTML = value;
+    }
+
+    set row(value) {
+      this.rowEl.innerHTML = value;
+    }
+
+    set column(value) {
+      this.columnEl.innerHTML = value;
+    }
+  });
+
+  Backed(class PurrAnnotationSet extends HTMLElement {
+    static get properties() {
+      return {
+        annotations: {
+          // value: new Map(),
+          observer: '__annotationsChange'
+        }
+      }
+    }
+
+    get input() {
+      return this.shadowRoot.querySelector('input');
+    }
+
+    ready() {
+      this._onInputChange = this._onInputChange.bind(this);
+      this.shadowRoot.querySelector('.type-select').items = [
+        {name: 'Verbose'},
+        {name: 'Info'},
+        {name: 'Warning'},
+        {name: 'Error'}
+      ];
+
+      this.input.addEventListener('input', this._onInputChange);
+    }
+
+    disconnected() {
+      this.input.removeEventListener('input', this._onInputChange);
+    }
+
+    _onInputChange() {
+      this.filter(this.input.value);
+    }
+
+    _onCustomSelectChange({detail}) {
+      this.filter(detail.toLowerCase(), true);
+    }
+
+    filter(value, byType=false) {
+      const filtered = this.annotations.filter(item => {
+        if (byType && value === 'verbose') {
+          return item;
+        } else if (byType && value === item.type) {
+          return item;
+        } else if (item.text.toLowerCase().includes(value)) {
+          return item;
+        }
+      });
+      this.__annotationsChange({value: filtered});
+    }
+
+    __annotationsChange(change) {
+      const children = this.querySelectorAll('purr-annotation');
+      let call = 0;
+      for (const annotation of change.value) {
+        let child = children[call];
+        if (!child) {
+          child = document.createElement('purr-annotation');
+          child.setAttribute('tabindex', 1)
+          this.appendChild(child);
+        }
+        child.annotation = annotation;
+        call++;
+      }
+      if (call < children.length) {
+        for (const child of children.entries()) {
+          if (child[0] >= call) {
+            this.removeChild(child[1]);
+          }
+        }
+        // console.log(children.slice(call));
+      }
+    }
+  });
+</script>

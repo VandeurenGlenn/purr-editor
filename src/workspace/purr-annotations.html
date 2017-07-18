@@ -1,0 +1,146 @@
+<link rel="import" href="purr-annotation-set.html">
+
+<template id="purr-annotations">
+  <style media="screen">
+    :host {
+      display: flex;
+      flex-direction: row;
+      /*height: 36px;
+      width: 36px;
+      padding: 8px;*/
+      box-sizing: border-box;
+      z-index: 100;
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(110%);
+      transition: transform ease-out 160ms, opacity ease-out 160ms;
+      pointer-events: none;
+    }
+    /*svg-icon {
+      opacity: 0;
+    }*/
+    :host(.shown) {
+      pointer-events: auto;
+      transform: translateY(0);
+      opacity: 1;
+      transition: transform ease-in 160ms, opacity ease-in 160ms;
+    }
+    ::slotted(purr-annotation-set) {
+      opacity: 0;
+    }
+    ::slotted(purr-annotation-set.opened.custom-selected) {
+      opacity: 1;
+    }
+    ::slotted(*) {
+      pointer-events: none;
+    }
+  </style>
+  <svg-icon icon="info"></svg-icon>
+  <slot></slot>
+</template>
+
+<script>
+  Backed(class PurrAnnotations extends HTMLElement {
+    static get properties() {
+      return {
+        annotations: {
+          value: new Map()
+        },
+
+        selected: {
+          observer: '__selectedChange__'
+        },
+
+        opened: {
+          value: false
+        }
+      }
+    }
+
+    get child() {
+      return this.querySelector(`purr-annotation-set[data-uid="${this.selected}"]`);
+    }
+
+    created() {
+      this._onClick = this._onClick.bind(this);
+    }
+
+    _onClick(event) {
+      const elName = event.path[0].localName;
+      if (elName !== 'purr-annotations' && elName !== 'svg-icon') {
+        return
+      }
+      if (this.opened) {
+        this.close();
+      } else {
+        this.open();
+      }
+    }
+
+    close() {
+      const child = this.child;
+      child ? child.classList.remove('opened') : null;
+      this.classList.remove('opened');
+      this.opened = false;
+    }
+
+    open() {
+      const child = this.child;
+      child ? child.classList.add('opened') : null;
+      this.classList.add('opened');
+      this.opened = true;
+    }
+
+    __selectedChange__(change) {
+      const set = this.querySelector(`purr-annotation-set[data-uid="${change.value}"]`);
+      if (this.previousSet) {
+        this.previousSet.classList.remove('custom-selected');
+        this.previousSet.classList.remove('opened');
+        this.opened = false;
+      }
+      if (set) {
+        this.addEventListener('click', this._onClick);
+        set.classList.add('custom-selected');
+        const total = set.annotations.length;
+        const text = total > 1 ? 'annotations' : 'annotation';
+        this.setAttribute('title', `${total} ${text}`);
+        this.classList.add('shown');
+      } else {
+        this.removeEventListener('click', this._onClick)
+        this.setAttribute('title', '');
+        this.classList.remove('shown');
+      }
+      this.previousSet = set;
+    }
+
+    /**
+     * the current uid to render
+     */
+    _render(uid, annotations) {
+      const sets = this.querySelectorAll('purr-annotation-set') || [];
+      let exists = false;
+      for (const set of sets) {
+        if (set.dataset.uid === uid) {
+          exists = true;
+          set.annotations = annotations;
+          set.dataset.uid = uid;
+        }
+      }
+      if (!exists) {
+        const el = document.createElement('purr-annotation-set');
+        el.annotations = annotations;
+        el.dataset.uid = uid;
+        this.appendChild(el);
+      }
+
+      if (this.selected) {
+        this.__selectedChange__({value: this.selected});
+      }
+    }
+
+    set({uid, annotations}) {
+      this.annotations.set(uid, annotations);
+      this._render(uid, annotations);
+    }
+  })
+</script>

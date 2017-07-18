@@ -9,10 +9,24 @@
       display: flex;
       flex-direction: column;
       width: 256px;
+      z-index: 1000;
+      pointer-events: none;
     }
     .container {
+      background: #FFF;
       flex: 1;
       overflow: auto;
+      pointer-events: auto;
+    }
+
+    :host(.floating-drawer) ::slotted(header), :host(.floating-drawer) slot[name="header"] {
+      opacity: 0;
+      background: transparent;
+      transition: background ease-in 160ms, opacity ease-in 160ms;
+    }
+
+    :host ::slotted(footer) {
+      pointer-events: auto;
     }
   </style>
   <slot name="header"></slot>
@@ -32,6 +46,9 @@
       <custom-button no-shadow disable-stop-propagation reason="rename">rename</custom-button>
     </context-menu>
   </div>
+  <slot name="toolbar">
+
+  </slot>
 </template>
 
 <script>
@@ -145,7 +162,6 @@
 
     onCustomSelectedChange(event) {
       const detail = event.detail;
-      console.log(event);
 
       switch (detail.type) {
         case 'folder':
@@ -292,6 +308,9 @@
         }
       }
       this.urlBar.newPath().then(name => {
+        if (name === '__purr__escaped') {
+          return;
+        }
         const key = target.dataset.uid;
         const folder = target.dataset.path;
         const file = new PurrFile(folder, this.handleDuplicatePath(folder, name));
@@ -312,6 +331,9 @@
         }
       }
       this.urlBar.newPath(true).then(name => {
+        if (name === '__purr__escaped') {
+          return;
+        }
         const key = target.dataset.uid;
         const path = target.dataset.path;
         const folder = new PurrFolder(path, this.handleDuplicatePath(path, name));
@@ -333,6 +355,9 @@
       const key = target.dataset.uid;
       const path = target.path;
       this.urlBar.rename(path).then(name => {
+        if (name === '__purr__escaped') {
+          return;
+        }
         this.updateName(parentUID, key, name);
         // this.updateProject(key, folder);
       });
