@@ -95,16 +95,17 @@
 
     ready() {
       this.localNS = 'purr-editor-settings::general';
-      this.config = this.localGet();
-      if (this.config.size === 0) {
-        this.config.set('autoSave', true);
-        this.config.set('autoSaveTimeout', 500);
-        this.config.set('autoCompletion', true);
-        this.config.set('liveAutoCompletion', true);
-        this.config.set('basicAutoCompletion', true);
-        this.config.set('snippets', true);
-        this.localSet(this.config);
+      const config = this.localGet();
+      if (config.size === 0) {
+        config.set('autoSave', true);
+        config.set('autoSaveTimeout', 500);
+        config.set('autoCompletion', true);
+        config.set('liveAutoCompletion', true);
+        config.set('basicAutoCompletion', true);
+        config.set('snippets', true);
+        this.localSet(config);
       }
+      this.config = config;
     }
 
     __configObserver__(change) {
