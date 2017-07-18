@@ -13,20 +13,21 @@
       position: absolute;
       bottom: 36px;
       left: 0;
-      pointer-events: none !important;
     }
 
     :host(.opened) {
       opacity: 1;
       z-index: 100;
+      cursor: default;
     }
 
     :host(.opened) .wrapper {
       pointer-events: auto;
+      cursor: pointer;
     }
 
     .wrapper {
-      pointer-events: none;
+      /*pointer-events: none;*/
       overflow: auto;
     }
 
