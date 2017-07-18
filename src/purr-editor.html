@@ -495,8 +495,7 @@
                 this.tabs.select(parts[1]);
                 this.selectedWindow = parts[1];
                 this.annotations.selected = parts[1];
-
-
+                this.fileDrawer.select(parts[1]);
                 const currentWindow = this.pages.querySelector(`ace-window[data-uid="${parts[1]}"]`);
                 if (currentWindow) {
                   const row = currentWindow.row;

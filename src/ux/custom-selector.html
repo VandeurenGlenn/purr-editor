@@ -65,13 +65,14 @@ Backed(class CustomSelector extends HTMLElement {
 		* @return {String|Number|HTMLElement}
 		*/
 	 get selected() {
-		 return this.getAttribute('selected') || 0;
+		 return this._selected || 0;
 	 }
 
 	 /**
 		* @param {String|Number|HTMLElement} value
 		*/
 	 set selected(value) {
+     this._selected = value;
 		 this._updateSelected(value);
 	 }
 

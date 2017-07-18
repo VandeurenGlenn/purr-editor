@@ -188,6 +188,10 @@
       }
     }
 
+    select(uid) {
+      this.shadowRoot.querySelector('custom-selector').selected = this.querySelector(`file-drawer-item[data-uid="${uid}"]`);
+    }
+
     forceRender(change) {
       this.render(change);
     }
