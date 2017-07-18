@@ -15,7 +15,6 @@
     }
 
     new({text, action}) {
-      console.log(text, action);
       customElements.whenDefined('custom-toast').then(() => {
         const toast = document.createElement('custom-toast');
         this.appendChild(toast);
@@ -44,7 +43,6 @@
     }
 
     promisToast(toast) {
-      console.log(toast);
       return toast.open().then(() => {
         const index = this.toasts.indexOf(toast);
         if (index !== -1) {

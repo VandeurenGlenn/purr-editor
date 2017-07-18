@@ -2,14 +2,14 @@
   <style>
     :host {
       position: absolute;
-      top: '12px';
-      right: '12px';
+      top: 56px;
+      right: 12px;
       display: flex;
       align-items: center;
       opacity: 0;
       height: 56px;
       z-index: 1000;
-      background: rgba(69, 90, 100, 0.72);
+      background: rgb(69, 90, 100);
     }
     .wrapper {
       flex: 1;
@@ -18,10 +18,15 @@
       display: flex;
       flex-direction: row;
       align-items: center;
+      padding: 8px 12px;
+      box-sizing: border-box;
     }
     .action {
       display: flex;
       color: orange;
+      padding: 8px 0 8px 12px;
+      cursor: pointer;
+      box-sizing: border-box;
     }
     :host(.opened) {
       opacity: 1;
@@ -51,11 +56,15 @@
 
     set action(value) {
       this.actionEl.innerHTML = value.name;
-      this.clickAction = value.action;
+      this.clickAction = value.func;
     }
 
     set clickAction(value) {
       this._clickAction = value;
+    }
+
+    created() {
+      this._runActions = this._runActions.bind(this);
     }
 
     open() {
@@ -65,7 +74,7 @@
         this.timeoutRunning = true;
         this.timeout = setTimeout(() => {
           this._runActions()
-        }, 1500);
+        }, 4500);
         this.addEventListener('close', () => resolve());
       });
     }

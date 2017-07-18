@@ -376,10 +376,13 @@
         const parentUID = target.dataset.uid;
         const parent = project.get(parentUID);
         const children = parent.children;
-        parent.children = [];
+        // parent.children = [];
         for (const child of children) {
-          if (child && child.uid !== uid) {
-            parent.children.push(child);
+          if (child && child.uid === uid) {
+            const index = parent.children.indexOf(child);
+            if (index !== -1) {
+              parent.children.splice(index, 1);
+            }
           }
         }
         project.set(parentUID, parent);
