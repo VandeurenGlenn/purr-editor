@@ -164,7 +164,7 @@
     }
   </style>
   <div class="wrapper">
-    <file-drawer on-show-file="onShowFile">
+    <file-drawer on-show-file="onShowFile" on-remove-file="_onRemoveFile">
       <header slot="header">
         <h1>Purr</h1>
       </header>
@@ -574,6 +574,13 @@
               }
             }
           }
+          if (calls < nodes.length) {
+            for (const child of this.windowMap.entries()) {
+              if (child[0] >= calls) {
+                this.removeChild(child[1]);
+              }
+            }
+          }
           localStorage.setItem('purr-editor::project', JSON.stringify(Array.from(project.entries())));
           this.fileDrawer.project = change.value;
           this.fileDrawer.forceRender({value: change.value});
@@ -900,8 +907,8 @@
         }
         zip.generateAsync({type:"blob"})
         .then((content) => {
-            // see FileSaver.js
-            saveAs(content, `${this.projectName}.zip`);
+          // see FileSaver.js
+          saveAs(content, `${this.projectName}.zip`);
         });
       }
 
@@ -915,6 +922,12 @@
         } else {
           this._createZip(this.project);
         }
+      }
+
+      _onRemoveFile({detail}) {
+        this._onTabClosed({detail: {dataset: {uid: detail}}});
+        const project = this.data;
+        this.project = project;
       }
     });
   })();

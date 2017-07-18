@@ -44,6 +44,8 @@
       <custom-button no-shadow disable-stop-propagation reason="addFolder" title="upload folder">add folder</custom-button>
       <custom-divider></custom-divider>
       <custom-button no-shadow disable-stop-propagation reason="rename">rename</custom-button>
+      <custom-divider></custom-divider>
+      <custom-button no-shadow disable-stop-propagation reason="remove">remove</custom-button>
     </context-menu>
   </div>
   <slot name="toolbar">
@@ -233,6 +235,13 @@
           calls++;
         }
       }
+      if (calls < nodes.length) {
+        for (const child of nodes.entries()) {
+          if (child[0] >= calls) {
+            this.removeChild(child[1]);
+          }
+        }
+      }
     }
 
     isFolded(depth) {
@@ -283,18 +292,7 @@
       const data = this.project.get(uid);
       data.name = name.match(/([a-zA-Z0-9-_.]+\..*)/g)[0]
       data.path = name;
-      // if (data.folderDepth === 0) {
-      //   this.projectName = name;
-      // } else {
-        // this.project.delete(original);
-        // if (this.windowMap.has(original)) {
-        //   const windowMap = this.windowMap;
-        //   windowMap.delete(original);
-        //   windowMap.set(uid, true);
-        //   localStorage.setItem('purr-editor::windows', JSON.stringify(Array.from(windowMap.entries())));
-        // }
-        this.updateProject(parentUID, data);
-      // }
+      this.updateProject(parentUID, data);
     }
 
     /**
@@ -361,6 +359,32 @@
         this.updateName(parentUID, key, name);
         // this.updateProject(key, folder);
       });
+    }
+
+    remove(event) {
+      let target = event.detail.target;
+      const uid = target.dataset.uid;
+      const project = this.project;
+      project.delete(uid);
+      if (target.type === 'file') {
+        while (target.type === 'file') {
+          target = target.previousElementSibling;
+        }
+        const parentUID = target.dataset.uid;
+        const parent = project.get(parentUID);
+        const children = parent.children;
+        parent.children = [];
+        for (const child of children) {
+          if (child && child.uid !== uid) {
+            parent.children.push(child);
+          }
+        }
+        project.set(parentUID, parent);
+      }
+
+      this.render({value: project});
+      localStorage.setItem('purr-editor::project', JSON.stringify(Array.from(project.entries())));
+      this.dispatchEvent(new CustomEvent('remove-file', {detail: uid}));
     }
 
     onContextmenuClosed(event) {
